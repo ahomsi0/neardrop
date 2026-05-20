@@ -1,7 +1,8 @@
 'use client';
 import { useEffect, useState, useCallback } from 'react';
+import { nanoid } from 'nanoid';
 import type { Peer } from '@neardrop/shared';
-import { getOrCreateIdentity } from '@/lib/deviceName';
+import { getOrCreateIdentity, updateDisplayName } from '@/lib/deviceName';
 import { useSignaling } from '@/hooks/useSignaling';
 import { usePeers } from '@/hooks/usePeers';
 import { useWebRTC } from '@/hooks/useWebRTC';
@@ -13,22 +14,29 @@ import { DesktopSidebar } from '@/components/DesktopSidebar';
 import { IncomingAlert } from '@/components/IncomingAlert';
 import { QRCodePanel } from '@/components/QRCodePanel';
 import { RoomCodeInput } from '@/components/RoomCodeInput';
+import { NameEntry } from '@/components/NameEntry';
 import type { IncomingTransfer } from '@/hooks/useTransfer';
+import type { Message } from '@/components/SendPanel';
+
+const NAME_SET_KEY = 'neardrop-name-set';
 
 export default function HomePage() {
-  const [identity] = useState(getOrCreateIdentity);
+  const [identity, setIdentity] = useState(getOrCreateIdentity);
+  const [nameReady, setNameReady] = useState(() => {
+    try { return !!localStorage.getItem(NAME_SET_KEY); } catch { return false; }
+  });
+
   const { peers, roomCode, setRoomJoined, addPeer, removePeer } = usePeers();
   const [selectedPeer, setSelectedPeer] = useState<Peer | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [qrOpen, setQrOpen] = useState(false);
   const [joinOpen, setJoinOpen] = useState(false);
   const [pendingTransfer, setPendingTransfer] = useState<IncomingTransfer | null>(null);
+  const [messages, setMessages] = useState<Message[]>([]);
 
   const { outgoing, sendFile, sendText, acceptTransfer, rejectTransfer, handleChannelMessage } =
     useTransfer();
 
-  // useSignaling declared first; its handlers reference initiateConnection/handleSignal
-  // from useWebRTC below — safe because both hooks use handlersRef (updated each render)
   const { joinRoom, sendSignal, leaveRoom } = useSignaling({
     onRoomJoined: ({ roomCode: code, peers: existingPeers }) => {
       setRoomJoined(code, existingPeers);
@@ -46,7 +54,9 @@ export default function HomePage() {
       channel.onmessage = (e) =>
         handleChannelMessage(
           peerId, e,
-          () => {},
+          (content) => setMessages(m => [...m, {
+            id: nanoid(), peerId, content, direction: 'received', timestamp: Date.now(),
+          }]),
           (t) => setPendingTransfer(t),
         );
     },
@@ -54,6 +64,7 @@ export default function HomePage() {
   });
 
   useEffect(() => {
+    if (!nameReady) return;
     const joinCode = sessionStorage.getItem('neardrop-join-code') ?? undefined;
     if (joinCode) sessionStorage.removeItem('neardrop-join-code');
     joinRoom({
@@ -64,6 +75,13 @@ export default function HomePage() {
     });
     return () => leaveRoom();
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nameReady]);
+
+  const handleNameSet = useCallback((name: string) => {
+    const updated = updateDisplayName(name);
+    setIdentity(updated);
+    try { localStorage.setItem(NAME_SET_KEY, '1'); } catch { /* ignore */ }
+    setNameReady(true);
   }, []);
 
   const handleSendFiles = useCallback((files: File[]) => {
@@ -78,7 +96,14 @@ export default function HomePage() {
     const channel = getChannel(selectedPeer.id);
     if (!channel) return;
     sendText(channel, text);
+    setMessages(m => [...m, {
+      id: nanoid(), peerId: selectedPeer.id, content: text, direction: 'sent', timestamp: Date.now(),
+    }]);
   }, [selectedPeer, getChannel, sendText]);
+
+  if (!nameReady) {
+    return <NameEntry onComplete={handleNameSet} />;
+  }
 
   const me: Peer = {
     id: identity.id,
@@ -104,7 +129,7 @@ export default function HomePage() {
           <div className="flex gap-2">
             <button onClick={() => setQrOpen(true)}
               className="text-xs font-bold bg-stone-900 text-white px-3 py-1.5 rounded-lg">
-              + Room
+              Invite
             </button>
             <button onClick={() => setJoinOpen(true)}
               className="text-xs font-bold bg-white border border-stone-200 text-stone-900 px-3 py-1.5 rounded-lg">
@@ -121,7 +146,7 @@ export default function HomePage() {
           />
           {peers.length === 0 && (
             <p className="text-center text-xs text-stone-400 pb-8">
-              Waiting for devices on this network…
+              Waiting for nearby devices…
             </p>
           )}
         </div>
@@ -130,6 +155,7 @@ export default function HomePage() {
           {selectedPeer ? (
             <SendPanel
               peer={selectedPeer}
+              messages={messages.filter(m => m.peerId === selectedPeer.id)}
               onSendFiles={handleSendFiles}
               onSendText={handleSendText}
               outgoing={Array.from(outgoing.values()).filter(t => t.peerId === selectedPeer.id)}
@@ -149,6 +175,7 @@ export default function HomePage() {
         onSendFiles={handleSendFiles}
         onSendText={handleSendText}
         outgoing={Array.from(outgoing.values())}
+        messages={messages}
       />
 
       <IncomingAlert

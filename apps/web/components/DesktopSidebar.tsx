@@ -14,12 +14,10 @@ interface Props {
 
 export function DesktopSidebar({ me, peers, selectedPeerId, roomCode, onSelectPeer, onNewRoom, onJoinRoom }: Props) {
   return (
-    <aside className="hidden md:flex w-48 flex-col bg-stone-100 border-r border-stone-200 shrink-0">
-      <div className="p-4 pb-0">
-        <h1 className="text-sm font-extrabold text-stone-900 tracking-tight">NearDrop</h1>
-        {roomCode && (
-          <p className="text-[10px] font-mono text-stone-400 mt-0.5">{roomCode}</p>
-        )}
+    <aside className="hidden md:flex w-56 flex-col bg-stone-100 border-r border-stone-200 shrink-0">
+      <div className="p-4 pb-2">
+        <h1 className="text-lg font-extrabold text-stone-900 tracking-tight">NearDrop</h1>
+        <p className="text-[11px] text-stone-400">Nearby devices</p>
       </div>
 
       {/* Mini radial */}
@@ -66,7 +64,7 @@ export function DesktopSidebar({ me, peers, selectedPeerId, roomCode, onSelectPe
       <div className="mt-auto p-2 grid grid-cols-2 gap-1.5">
         <Button size="sm" onClick={onNewRoom}
           className="bg-stone-900 text-white hover:bg-stone-700 rounded-lg text-[10px] h-8">
-          + Room
+          Invite
         </Button>
         <Button size="sm" variant="outline" onClick={onJoinRoom}
           className="border-stone-200 text-stone-900 rounded-lg text-[10px] h-8">
