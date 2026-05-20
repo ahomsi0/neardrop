@@ -42,13 +42,17 @@ export function useTransfer() {
     }));
 
     await new Promise<void>((resolve, reject) => {
+      const closeHandler = () => reject(new Error('Channel closed'));
+      channel.addEventListener('close', closeHandler);
+
       const acceptHandler = async (event: MessageEvent) => {
         let msg: TransferMessage;
         try { msg = JSON.parse(event.data as string); } catch { return; }
         if (msg.type !== 'TRANSFER_ACCEPT' || msg.id !== id) return;
 
         channel.removeEventListener('message', acceptHandler);
-        setOutgoing(m => { const n = new Map(m); n.get(id)!.status = 'sending'; return n; });
+        channel.removeEventListener('close', closeHandler);
+        setOutgoing(m => { const n = new Map(m); n.set(id, { ...n.get(id)!, status: 'sending' }); return n; });
 
         let sent = 0;
         for await (const { encoded } of chunkFile(file)) {
@@ -62,13 +66,13 @@ export function useTransfer() {
           sent++;
           setOutgoing(m => {
             const n = new Map(m);
-            n.get(id)!.progress = Math.round((sent / totalChunks) * 100);
+            n.set(id, { ...n.get(id)!, progress: Math.round((sent / totalChunks) * 100) });
             return n;
           });
         }
 
         channel.send(JSON.stringify({ type: 'TRANSFER_DONE', id, sha256 }));
-        setOutgoing(m => { const n = new Map(m); n.get(id)!.status = 'done'; return n; });
+        setOutgoing(m => { const n = new Map(m); n.set(id, { ...n.get(id)!, status: 'done' }); return n; });
         resolve();
       };
       channel.addEventListener('message', acceptHandler);
@@ -81,7 +85,7 @@ export function useTransfer() {
 
   const acceptTransfer = useCallback((id: string, channel: RTCDataChannel) => {
     channel.send(JSON.stringify({ type: 'TRANSFER_ACCEPT', id }));
-    setIncoming(m => { const n = new Map(m); n.get(id)!.status = 'receiving'; return n; });
+    setIncoming(m => { const n = new Map(m); n.set(id, { ...n.get(id)!, status: 'receiving' }); return n; });
   }, []);
 
   const rejectTransfer = useCallback((id: string, channel: RTCDataChannel) => {
@@ -116,13 +120,13 @@ export function useTransfer() {
       }
 
       if (msg.type === 'TRANSFER_DONE') {
-        setIncoming(currentIncoming => {
-          const transfer = currentIncoming.get(msg.id);
-          if (!transfer) return currentIncoming;
-          const asm = assemblers.current.get(msg.id);
-          if (!asm) return currentIncoming;
+        const transfer = incoming.get(msg.id);
+        if (!transfer) return;
+        const asm = assemblers.current.get(msg.id);
+        if (!asm) return;
 
-          (async () => {
+        (async () => {
+          try {
             let blob: Blob;
             if (asm instanceof MemoryAssembler) {
               blob = asm.assemble();
@@ -133,7 +137,7 @@ export function useTransfer() {
 
             const actualHash = await computeSHA256(await blob.arrayBuffer());
             if (actualHash !== msg.sha256) {
-              setIncoming(m => { const n = new Map(m); n.get(msg.id)!.status = 'error'; return n; });
+              setIncoming(m => { const n = new Map(m); n.set(msg.id, { ...n.get(msg.id)!, status: 'error' }); return n; });
               return;
             }
 
@@ -141,12 +145,12 @@ export function useTransfer() {
             const a = document.createElement('a');
             a.href = url; a.download = transfer.name; a.click();
             setTimeout(() => URL.revokeObjectURL(url), 60_000);
-            setIncoming(m => { const n = new Map(m); n.get(msg.id)!.status = 'done'; return n; });
+            setIncoming(m => { const n = new Map(m); n.set(msg.id, { ...n.get(msg.id)!, status: 'done' }); return n; });
             assemblers.current.delete(msg.id);
-          })();
-
-          return currentIncoming;
-        });
+          } catch {
+            setIncoming(m => { const n = new Map(m); n.set(msg.id, { ...n.get(msg.id)!, status: 'error' }); return n; });
+          }
+        })();
       }
 
       if (msg.type === 'TEXT_MESSAGE') {
@@ -174,7 +178,7 @@ export function useTransfer() {
         return currentIncoming;
       });
     }
-  }, []);
+  }, [incoming]);
 
   return { outgoing, incoming, sendFile, sendText, acceptTransfer, rejectTransfer, handleChannelMessage };
 }

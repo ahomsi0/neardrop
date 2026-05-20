@@ -1,5 +1,5 @@
 'use client';
-import { useRef, useCallback } from 'react';
+import { useRef, useCallback, useEffect } from 'react';
 import type { Peer } from '@neardrop/shared';
 
 const ICE_SERVERS: RTCIceServer[] = [
@@ -22,6 +22,14 @@ export function useWebRTC(handlers: WebRTCHandlers) {
   const channels    = useRef<Map<string, RTCDataChannel>>(new Map());
   const handlersRef = useRef(handlers);
   handlersRef.current = handlers;
+
+  useEffect(() => {
+    return () => {
+      for (const pc of connections.current.values()) pc.close();
+      connections.current.clear();
+      channels.current.clear();
+    };
+  }, []);
 
   const setupChannel = (peerId: string, channel: RTCDataChannel) => {
     channels.current.set(peerId, channel);
@@ -58,7 +66,8 @@ export function useWebRTC(handlers: WebRTCHandlers) {
         .then((offer) => pc.setLocalDescription(offer))
         .then(() => {
           handlersRef.current.onSendSignal(peerId, 'offer', pc.localDescription!.toJSON());
-        });
+        })
+        .catch(() => closeConnection(peerId));
     } else {
       pc.ondatachannel = (e) => setupChannel(peerId, e.channel);
     }
