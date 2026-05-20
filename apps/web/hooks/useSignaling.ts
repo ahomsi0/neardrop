@@ -3,16 +3,17 @@ import { useEffect, useRef, useCallback } from 'react';
 import { io, Socket } from 'socket.io-client';
 import type {
   ClientToServerEvents, ServerToClientEvents,
-  JoinRoomPayload, SignalPayload,
+  JoinRoomPayload, SignalPayload, Peer,
 } from '@neardrop/shared';
 
 export type SignalingSocket = Socket<ServerToClientEvents, ClientToServerEvents>;
 
 export interface SignalingHandlers {
-  onRoomJoined: (payload: { roomCode: string; peers: import('@neardrop/shared').Peer[] }) => void;
-  onPeerJoined: (payload: { peer: import('@neardrop/shared').Peer }) => void;
+  onRoomJoined: (payload: { roomCode: string; peers: Peer[] }) => void;
+  onPeerJoined: (payload: { peer: Peer }) => void;
   onPeerLeft:   (payload: { peerId: string }) => void;
   onSignal:     (payload: { from: string; type: 'offer' | 'answer' | 'ice'; payload: unknown }) => void;
+  onError?:     (payload: { code: string; message: string }) => void;
 }
 
 const SIGNALING_URL = process.env.NEXT_PUBLIC_SIGNALING_URL ?? 'http://localhost:3001';
@@ -31,12 +32,14 @@ export function useSignaling(handlers: SignalingHandlers) {
       reconnectionDelayMax: 8000,
     });
 
+    socketRef.current = socket;
+
     socket.on('room-joined', (p) => handlersRef.current.onRoomJoined(p));
     socket.on('peer-joined', (p) => handlersRef.current.onPeerJoined(p));
     socket.on('peer-left',   (p) => handlersRef.current.onPeerLeft(p));
     socket.on('signal',      (p) => handlersRef.current.onSignal(p));
+    socket.on('error',       (p) => handlersRef.current.onError?.(p));
 
-    socketRef.current = socket;
     return () => { socket.disconnect(); };
   }, []);
 
