@@ -8,17 +8,23 @@ const inter = Inter({subsets:['latin'],variable:'--font-sans'});
 export const metadata: Metadata = {
   title: 'NearDrop',
   description: 'Instant local file sharing — no account required',
+  manifest: '/manifest.json',
+  appleWebApp: { capable: true, statusBarStyle: 'default', title: 'NearDrop' },
 };
 
 export const viewport: Viewport = {
   themeColor: '#fafaf9',
   width: 'device-width',
   initialScale: 1,
+  maximumScale: 1,
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={cn("font-sans", inter.variable)}>
+      <head>
+        <link rel="apple-touch-icon" href="/icon-192.png" />
+      </head>
       <body className="bg-stone-50 text-stone-900 min-h-screen font-sans antialiased">
         {children}
       </body>
