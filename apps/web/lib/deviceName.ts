@@ -10,7 +10,7 @@ const ANIMALS: { name: string; emoji: string }[] = [
   { name: 'Wolf',    emoji: '🐺' }, { name: 'Eagle',   emoji: '🦅' },
   { name: 'Dolphin', emoji: '🐬' }, { name: 'Tiger',   emoji: '🐯' },
   { name: 'Bear',    emoji: '🐻' }, { name: 'Owl',     emoji: '🦉' },
-  { name: 'Lynx',    emoji: '🐱' }, { name: 'Hawk',    emoji: '🦅' },
+  { name: 'Lynx',    emoji: '🐱' }, { name: 'Hawk',    emoji: '🪶' },
 ];
 
 export function generateDeviceName(): { displayName: string; emoji: string } {
