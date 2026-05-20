@@ -13,7 +13,12 @@ export class MemoryAssembler {
   }
 
   assemble(): Blob {
-    const ordered = Array.from({ length: this.totalChunks }, (_, i) => this.chunks.get(i)!);
+    const ordered: ArrayBuffer[] = [];
+    for (let i = 0; i < this.totalChunks; i++) {
+      const chunk = this.chunks.get(i);
+      if (chunk === undefined) throw new Error(`MemoryAssembler: missing chunk at index ${i}`);
+      ordered.push(chunk);
+    }
     return new Blob(ordered, { type: this.mimeType });
   }
 }
@@ -37,9 +42,10 @@ export class IndexedDBAssembler {
   async storeChunk(transferId: string, index: number, data: ArrayBuffer): Promise<void> {
     return new Promise((resolve, reject) => {
       const tx = this.db!.transaction(this.STORE, 'readwrite');
-      const req = tx.objectStore(this.STORE).put(data, `${transferId}:${index}`);
-      req.onsuccess = () => resolve();
-      req.onerror = () => reject(req.error);
+      tx.objectStore(this.STORE).put(data, `${transferId}:${index}`);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+      tx.onabort = () => reject(tx.error);
     });
   }
 
