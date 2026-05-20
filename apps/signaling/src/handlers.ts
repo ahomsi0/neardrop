@@ -40,8 +40,9 @@ export function registerHandlers(
     if (!result.success) return socket.emit('error', { code: 'INVALID', message: 'Bad payload' });
     const { roomCode, displayName, emoji, deviceType } = result.data;
 
+    const fwd = socket.handshake.headers['x-forwarded-for'];
     const ip = getClientIp(
-      socket.handshake.headers['x-forwarded-for'] as string | undefined,
+      Array.isArray(fwd) ? fwd[0] : fwd,
       socket.handshake.address
     );
 
@@ -54,8 +55,12 @@ export function registerHandlers(
       return socket.emit('error', { code: 'ROOM_FULL', message: 'Room is full' });
     }
 
+    try {
+      rooms.addPeer(code, { id: socket.id, displayName, emoji, deviceType });
+    } catch {
+      return socket.emit('error', { code: 'ROOM_ERROR', message: 'Failed to join room' });
+    }
     currentRoomCode = code;
-    rooms.addPeer(code, { id: socket.id, displayName, emoji, deviceType });
     socket.join(code);
 
     socket.emit('room-joined', { roomCode: code, peers });
@@ -69,6 +74,9 @@ export function registerHandlers(
     const result = signalSchema.safeParse(raw);
     if (!result.success) return;
     const { to, type, payload } = result.data;
+    if (!currentRoomCode) return;
+    const inRoom = rooms.getPeers(currentRoomCode).some((p) => p.id === to);
+    if (!inRoom) return;
     io.to(to).emit('signal', { from: socket.id, type, payload });
   });
 
@@ -82,7 +90,9 @@ export function registerHandlers(
 
   socket.on('disconnect', () => {
     if (!currentRoomCode) return;
+    const code = currentRoomCode;
+    currentRoomCode = null;
     rooms.removePeer(socket.id);
-    socket.to(currentRoomCode).emit('peer-left', { peerId: socket.id });
+    socket.to(code).emit('peer-left', { peerId: socket.id });
   });
 }

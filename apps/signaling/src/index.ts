@@ -25,4 +25,7 @@ io.on('connection', (socket) => {
 
 app.listen({ port: PORT, host: '0.0.0.0' }).then(() => {
   console.log(`Signaling server running on port ${PORT}`);
+}).catch((err: Error) => {
+  app.log.error(err);
+  process.exit(1);
 });
