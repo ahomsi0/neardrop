@@ -5,3 +5,7 @@ dist
 .superpowers
 *.env.local
 *.env
+.DS_Store
+.vscode/
+.idea/
+*.eslintcache
