@@ -1,5 +1,5 @@
 {
-  "buildCommand": "cd ../.. && pnpm install --frozen-lockfile && pnpm turbo run build --filter=@neardrop/web",
+  "buildCommand": "cd ../.. && pnpm turbo run build --filter=@neardrop/web",
   "outputDirectory": ".next",
   "framework": "nextjs"
 }
