@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: neardrop-signaling
+    runtime: docker
+    dockerfilePath: ./apps/signaling/Dockerfile
+    dockerContext: .
+    plan: free
+    envVars:
+      - key: PORT
+        value: 3001
+      - key: NODE_ENV
+        value: production
