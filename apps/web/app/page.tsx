@@ -33,6 +33,7 @@ export default function HomePage() {
   const [joinOpen, setJoinOpen] = useState(false);
   const [pendingTransfer, setPendingTransfer] = useState<IncomingTransfer | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
+  const [unread, setUnread] = useState<Set<string>>(new Set());
 
   const { outgoing, sendFile, sendText, acceptTransfer, rejectTransfer, handleChannelMessage } =
     useTransfer();
@@ -54,9 +55,12 @@ export default function HomePage() {
       channel.onmessage = (e) =>
         handleChannelMessage(
           peerId, e,
-          (content) => setMessages(m => [...m, {
-            id: nanoid(), peerId, content, direction: 'received', timestamp: Date.now(),
-          }]),
+          (content) => {
+            setMessages(m => [...m, {
+              id: nanoid(), peerId, content, direction: 'received', timestamp: Date.now(),
+            }]);
+            setUnread(u => new Set(u).add(peerId));
+          },
           (t) => setPendingTransfer(t),
         );
     },
@@ -118,7 +122,8 @@ export default function HomePage() {
         me={me} peers={peers}
         selectedPeerId={selectedPeer?.id ?? null}
         roomCode={roomCode}
-        onSelectPeer={setSelectedPeer}
+        unreadPeerIds={unread}
+        onSelectPeer={(p) => { setSelectedPeer(p); setUnread(u => { const n = new Set(u); n.delete(p.id); return n; }); }}
         onNewRoom={() => setQrOpen(true)}
         onJoinRoom={() => setJoinOpen(true)}
       />

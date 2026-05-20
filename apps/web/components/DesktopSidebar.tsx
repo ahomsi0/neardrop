@@ -6,12 +6,13 @@ interface Props {
   peers: Peer[];
   selectedPeerId: string | null;
   roomCode: string | null;
+  unreadPeerIds: Set<string>;
   onSelectPeer: (peer: Peer) => void;
   onNewRoom: () => void;
   onJoinRoom: () => void;
 }
 
-export function DesktopSidebar({ me, peers, selectedPeerId, onSelectPeer, onNewRoom, onJoinRoom }: Props) {
+export function DesktopSidebar({ me, peers, selectedPeerId, unreadPeerIds, onSelectPeer, onNewRoom, onJoinRoom }: Props) {
   return (
     <aside className="hidden md:flex w-56 flex-col bg-stone-100 border-r border-stone-200 shrink-0">
       {/* App header */}
@@ -57,13 +58,16 @@ export function DesktopSidebar({ me, peers, selectedPeerId, onSelectPeer, onNewR
                 ].join(' ')}
               >
                 <span className="text-base">{p.emoji}</span>
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                   <p className="text-xs font-bold text-stone-900 truncate">{p.displayName}</p>
                   <p className="text-[10px] text-green-600 flex items-center gap-1">
                     <span className="w-1 h-1 bg-green-500 rounded-full inline-block" />
                     connected
                   </p>
                 </div>
+                {unreadPeerIds.has(p.id) && (
+                  <span className="w-2 h-2 bg-stone-900 rounded-full shrink-0" />
+                )}
               </button>
             ))}
           </div>
