@@ -1,3 +1,173 @@
-export default function Home() {
-  return <main><p>NearDrop</p></main>;
+'use client';
+import { useEffect, useState, useCallback } from 'react';
+import type { Peer } from '@neardrop/shared';
+import { getOrCreateIdentity } from '@/lib/deviceName';
+import { useSignaling } from '@/hooks/useSignaling';
+import { usePeers } from '@/hooks/usePeers';
+import { useWebRTC } from '@/hooks/useWebRTC';
+import { useTransfer } from '@/hooks/useTransfer';
+import { RadialCanvas } from '@/components/RadialCanvas';
+import { SendSheet } from '@/components/SendSheet';
+import { SendPanel } from '@/components/SendPanel';
+import { DesktopSidebar } from '@/components/DesktopSidebar';
+import { IncomingAlert } from '@/components/IncomingAlert';
+import { QRCodePanel } from '@/components/QRCodePanel';
+import { RoomCodeInput } from '@/components/RoomCodeInput';
+import type { IncomingTransfer } from '@/hooks/useTransfer';
+
+export default function HomePage() {
+  const identity = getOrCreateIdentity();
+  const { peers, roomCode, setRoomJoined, addPeer, removePeer } = usePeers();
+  const [selectedPeer, setSelectedPeer] = useState<Peer | null>(null);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [qrOpen, setQrOpen] = useState(false);
+  const [joinOpen, setJoinOpen] = useState(false);
+  const [pendingTransfer, setPendingTransfer] = useState<IncomingTransfer | null>(null);
+
+  const { outgoing, sendFile, sendText, acceptTransfer, rejectTransfer, handleChannelMessage } =
+    useTransfer();
+
+  const { initiateConnection, handleSignal, getChannel } = useWebRTC({
+    onChannel: (peerId, channel) => {
+      channel.onmessage = (e) =>
+        handleChannelMessage(
+          peerId, e,
+          () => {},
+          (t) => setPendingTransfer(t),
+        );
+    },
+    onSendSignal: (to, type, payload) => sendSignal({ to, type, payload }),
+  });
+
+  const { joinRoom, sendSignal, leaveRoom } = useSignaling({
+    onRoomJoined: ({ roomCode: code, peers: existingPeers }) => {
+      setRoomJoined(code, existingPeers);
+      existingPeers.forEach(p => initiateConnection(p));
+    },
+    onPeerJoined: ({ peer }) => {
+      addPeer(peer);
+    },
+    onPeerLeft: ({ peerId }) => removePeer(peerId),
+    onSignal: ({ from, type, payload }) => handleSignal(from, type, payload),
+  });
+
+  useEffect(() => {
+    const joinCode = sessionStorage.getItem('neardrop-join-code') ?? undefined;
+    if (joinCode) sessionStorage.removeItem('neardrop-join-code');
+    joinRoom({
+      roomCode: joinCode,
+      displayName: identity.displayName,
+      emoji: identity.emoji,
+      deviceType: identity.deviceType,
+    });
+    return () => leaveRoom();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleSendFiles = useCallback((files: File[]) => {
+    if (!selectedPeer) return;
+    const channel = getChannel(selectedPeer.id);
+    if (!channel) return;
+    files.forEach(f => sendFile(selectedPeer.id, f, channel));
+  }, [selectedPeer, getChannel, sendFile]);
+
+  const handleSendText = useCallback((text: string) => {
+    if (!selectedPeer) return;
+    const channel = getChannel(selectedPeer.id);
+    if (!channel) return;
+    sendText(channel, text);
+  }, [selectedPeer, getChannel, sendText]);
+
+  const me: Peer = {
+    id: identity.id,
+    displayName: identity.displayName,
+    emoji: identity.emoji,
+    deviceType: identity.deviceType,
+  };
+
+  return (
+    <div className="flex h-dvh overflow-hidden">
+      <DesktopSidebar
+        me={me} peers={peers}
+        selectedPeerId={selectedPeer?.id ?? null}
+        roomCode={roomCode}
+        onSelectPeer={setSelectedPeer}
+        onNewRoom={() => setQrOpen(true)}
+        onJoinRoom={() => setJoinOpen(true)}
+      />
+
+      <main className="flex-1 flex flex-col overflow-hidden">
+        <div className="md:hidden flex items-center justify-between px-4 pt-4 pb-2">
+          <h1 className="text-base font-extrabold text-stone-900">NearDrop</h1>
+          <div className="flex gap-2">
+            <button onClick={() => setQrOpen(true)}
+              className="text-xs font-bold bg-stone-900 text-white px-3 py-1.5 rounded-lg">
+              + Room
+            </button>
+            <button onClick={() => setJoinOpen(true)}
+              className="text-xs font-bold bg-white border border-stone-200 text-stone-900 px-3 py-1.5 rounded-lg">
+              Join
+            </button>
+          </div>
+        </div>
+
+        <div className="md:hidden flex-1 flex flex-col px-4">
+          <RadialCanvas
+            me={me} peers={peers}
+            selectedPeerId={selectedPeer?.id ?? null}
+            onSelectPeer={(p) => { setSelectedPeer(p); setSheetOpen(true); }}
+          />
+          {peers.length === 0 && (
+            <p className="text-center text-xs text-stone-400 pb-8">
+              Waiting for devices on this network…
+            </p>
+          )}
+        </div>
+
+        <div className="hidden md:flex flex-1 p-6 overflow-auto">
+          {selectedPeer ? (
+            <SendPanel
+              peer={selectedPeer}
+              onSendFiles={handleSendFiles}
+              onSendText={handleSendText}
+              outgoing={Array.from(outgoing.values()).filter(t => t.peerId === selectedPeer.id)}
+            />
+          ) : (
+            <div className="flex-1 flex flex-col items-center justify-center text-stone-300">
+              <span className="text-5xl mb-3">←</span>
+              <p className="text-sm font-medium">Select a device to send files</p>
+            </div>
+          )}
+        </div>
+      </main>
+
+      <SendSheet
+        peer={selectedPeer} open={sheetOpen}
+        onClose={() => setSheetOpen(false)}
+        onSendFiles={handleSendFiles}
+        onSendText={handleSendText}
+        outgoing={Array.from(outgoing.values())}
+      />
+
+      <IncomingAlert
+        transfer={pendingTransfer}
+        fromName={peers.find(p => p.id === pendingTransfer?.peerId)?.displayName ?? 'Someone'}
+        onAccept={(id) => {
+          const channel = getChannel(pendingTransfer!.peerId);
+          if (channel) acceptTransfer(id, channel);
+          setPendingTransfer(null);
+        }}
+        onReject={(id) => {
+          const channel = getChannel(pendingTransfer!.peerId);
+          if (channel) rejectTransfer(id, channel);
+          setPendingTransfer(null);
+        }}
+      />
+
+      <QRCodePanel roomCode={roomCode} open={qrOpen} onClose={() => setQrOpen(false)} />
+      <RoomCodeInput open={joinOpen} onClose={() => setJoinOpen(false)}
+        onJoin={(code) => joinRoom({ roomCode: code, displayName: identity.displayName, emoji: identity.emoji, deviceType: identity.deviceType })}
+      />
+    </div>
+  );
 }
