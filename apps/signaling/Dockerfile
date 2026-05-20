@@ -1,16 +1,12 @@
 FROM node:20-alpine AS base
 RUN corepack enable && corepack prepare pnpm@9 --activate
 
-FROM base AS deps
+FROM base AS build
 WORKDIR /app
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
 COPY packages/shared/package.json ./packages/shared/
 COPY apps/signaling/package.json ./apps/signaling/
 RUN pnpm install --frozen-lockfile
-
-FROM base AS build
-WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
 COPY packages/shared ./packages/shared
 COPY apps/signaling ./apps/signaling
 COPY tsconfig.base.json ./
