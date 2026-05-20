@@ -8,7 +8,6 @@ const inter = Inter({subsets:['latin'],variable:'--font-sans'});
 export const metadata: Metadata = {
   title: 'NearDrop',
   description: 'Instant local file sharing — no account required',
-  manifest: '/manifest.json',
 };
 
 export const viewport: Viewport = {
