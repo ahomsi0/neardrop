@@ -16,7 +16,7 @@ import { RoomCodeInput } from '@/components/RoomCodeInput';
 import type { IncomingTransfer } from '@/hooks/useTransfer';
 
 export default function HomePage() {
-  const identity = getOrCreateIdentity();
+  const [identity] = useState(getOrCreateIdentity);
   const { peers, roomCode, setRoomJoined, addPeer, removePeer } = usePeers();
   const [selectedPeer, setSelectedPeer] = useState<Peer | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -26,6 +26,20 @@ export default function HomePage() {
 
   const { outgoing, sendFile, sendText, acceptTransfer, rejectTransfer, handleChannelMessage } =
     useTransfer();
+
+  // useSignaling declared first; its handlers reference initiateConnection/handleSignal
+  // from useWebRTC below — safe because both hooks use handlersRef (updated each render)
+  const { joinRoom, sendSignal, leaveRoom } = useSignaling({
+    onRoomJoined: ({ roomCode: code, peers: existingPeers }) => {
+      setRoomJoined(code, existingPeers);
+      existingPeers.forEach(p => initiateConnection(p));
+    },
+    onPeerJoined: ({ peer }) => {
+      addPeer(peer);
+    },
+    onPeerLeft: ({ peerId }) => removePeer(peerId),
+    onSignal: ({ from, type, payload }) => handleSignal(from, type, payload),
+  });
 
   const { initiateConnection, handleSignal, getChannel } = useWebRTC({
     onChannel: (peerId, channel) => {
@@ -37,18 +51,6 @@ export default function HomePage() {
         );
     },
     onSendSignal: (to, type, payload) => sendSignal({ to, type, payload }),
-  });
-
-  const { joinRoom, sendSignal, leaveRoom } = useSignaling({
-    onRoomJoined: ({ roomCode: code, peers: existingPeers }) => {
-      setRoomJoined(code, existingPeers);
-      existingPeers.forEach(p => initiateConnection(p));
-    },
-    onPeerJoined: ({ peer }) => {
-      addPeer(peer);
-    },
-    onPeerLeft: ({ peerId }) => removePeer(peerId),
-    onSignal: ({ from, type, payload }) => handleSignal(from, type, payload),
   });
 
   useEffect(() => {
