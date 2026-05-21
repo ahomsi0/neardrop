@@ -40,6 +40,29 @@ export function SendPanel({ peer, messages, onSendFiles, onSendText, outgoing, h
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  useEffect(() => {
+    const handlePaste = (e: ClipboardEvent) => {
+      const items = Array.from(e.clipboardData?.items ?? []);
+      const imageItem = items.find(i => i.type.startsWith('image/'));
+      if (imageItem) {
+        const file = imageItem.getAsFile();
+        if (file) {
+          const named = new File([file], `pasted-image-${Date.now()}.png`, { type: file.type });
+          onSendFiles([named]);
+          return;
+        }
+      }
+      const textItem = items.find(i => i.kind === 'string' && i.type === 'text/plain');
+      if (textItem) {
+        textItem.getAsString((str) => {
+          if (str.trim()) setText(str);
+        });
+      }
+    };
+    window.addEventListener('paste', handlePaste);
+    return () => window.removeEventListener('paste', handlePaste);
+  }, [onSendFiles]);
+
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
