@@ -1,5 +1,6 @@
 'use client';
 import { useRef, useState, useCallback, useEffect } from 'react';
+import JSZip from 'jszip';
 import { Button } from '@/components/ui/button';
 import type { Peer } from '@neardrop/shared';
 import type { OutgoingTransfer, IncomingTransfer } from '@/hooks/useTransfer';
@@ -34,6 +35,7 @@ function fmt(ts: number) {
 export function SendPanel({ peer, messages, onSendFiles, onSendText, outgoing, incoming, history, onClearHistory }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const fileRef  = useRef<HTMLInputElement>(null);
+  const folderRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [text, setText] = useState('');
   const [isDragging, setIsDragging] = useState(false);
@@ -97,6 +99,30 @@ export function SendPanel({ peer, messages, onSendFiles, onSendText, outgoing, i
         <input ref={fileRef} type="file" multiple className="hidden"
           onChange={(e) => { const f = Array.from(e.target.files ?? []); if (f.length) onSendFiles(f); }}
         />
+        <input
+          ref={folderRef}
+          type="file"
+          // @ts-expect-error — webkitdirectory is non-standard
+          webkitdirectory="true"
+          multiple
+          className="hidden"
+          onChange={async (e) => {
+            const files = Array.from(e.target.files ?? []);
+            if (!files.length) return;
+            const zip = new JSZip();
+            files.forEach(f => {
+              const path = (f as File & { webkitRelativePath: string }).webkitRelativePath || f.name;
+              zip.file(path, f);
+            });
+            const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE' });
+            const folderName = files[0]
+              ? (files[0] as File & { webkitRelativePath: string }).webkitRelativePath.split('/')[0]
+              : 'folder';
+            const zipFile = new File([blob], `${folderName}.zip`, { type: 'application/zip' });
+            onSendFiles([zipFile]);
+            e.target.value = '';
+          }}
+        />
         <button
           onClick={async () => {
             try {
@@ -117,6 +143,14 @@ export function SendPanel({ peer, messages, onSendFiles, onSendText, outgoing, i
           aria-label="Share clipboard"
         >
           📋
+        </button>
+        <button
+          onClick={() => folderRef.current?.click()}
+          className="text-xs font-bold bg-stone-100 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-stone-700 dark:text-stone-300 px-3 py-1.5 rounded-lg hover:bg-stone-200 dark:hover:bg-stone-700 transition-colors"
+          title="Send folder (zipped)"
+          aria-label="Send folder"
+        >
+          📁
         </button>
         <button
           onClick={() => fileRef.current?.click()}
