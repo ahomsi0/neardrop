@@ -100,14 +100,14 @@ export function SendPanel({ peer, messages, onSendFiles, onSendText, outgoing, i
         <button
           onClick={async () => {
             try {
-              const text = await navigator.clipboard.readText();
-              if (!text.trim()) return;
-              if (text.length > 500) {
-                const blob = new Blob([text], { type: 'text/plain' });
+              const clipboardText = await navigator.clipboard.readText();
+              if (!clipboardText.trim()) return;
+              if (clipboardText.length > 500) {
+                const blob = new Blob([clipboardText], { type: 'text/plain' });
                 const file = new File([blob], `clipboard-${Date.now()}.txt`, { type: 'text/plain' });
                 onSendFiles([file]);
               } else {
-                setText(text.trim());
+                setText(clipboardText.trim());
                 inputRef.current?.focus();
               }
             } catch { /* permission denied or empty */ }
