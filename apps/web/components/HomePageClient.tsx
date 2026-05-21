@@ -37,6 +37,8 @@ export default function HomePage() {
   const peersRef = useRef(peers);
   useEffect(() => { peersRef.current = peers; }, [peers]);
   const [selectedPeer, setSelectedPeer] = useState<Peer | null>(null);
+  const [broadcastMode, setBroadcastMode] = useState(false);
+  const fileRef_broadcast = useRef<HTMLInputElement>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [qrOpen, setQrOpen] = useState(false);
   const [joinOpen, setJoinOpen] = useState(false);
@@ -143,30 +145,34 @@ export default function HomePage() {
   }, []);
 
   const handleSendFiles = useCallback((files: File[]) => {
-    if (!selectedPeer) return;
-    const channel = getChannel(selectedPeer.id);
-    if (!channel) return;
-    files.forEach(f => {
-      playSend();
-      sendFile(selectedPeer.id, f, channel).then(() => {
-        addHistory({ peerId: selectedPeer.id, kind: 'file', name: f.name, direction: 'sent', status: 'done' });
-      }).catch(() => {
-        addHistory({ peerId: selectedPeer.id, kind: 'file', name: f.name, direction: 'sent', status: 'error' });
+    const targets = broadcastMode ? peers : (selectedPeer ? [selectedPeer] : []);
+    targets.forEach(target => {
+      const channel = getChannel(target.id);
+      if (!channel) return;
+      files.forEach(f => {
+        playSend();
+        sendFile(target.id, f, channel).then(() => {
+          addHistory({ peerId: target.id, kind: 'file', name: f.name, direction: 'sent', status: 'done' });
+        }).catch(() => {
+          addHistory({ peerId: target.id, kind: 'file', name: f.name, direction: 'sent', status: 'error' });
+        });
       });
     });
-  }, [selectedPeer, getChannel, sendFile, addHistory]);
+  }, [broadcastMode, peers, selectedPeer, getChannel, sendFile, addHistory]);
 
   const handleSendText = useCallback((text: string) => {
-    if (!selectedPeer) return;
-    const channel = getChannel(selectedPeer.id);
-    if (!channel) return;
-    playSend();
-    sendText(channel, text);
-    setMessages(m => [...m, {
-      id: nanoid(), peerId: selectedPeer.id, content: text, direction: 'sent', timestamp: Date.now(),
-    }]);
-    addHistory({ peerId: selectedPeer.id, kind: 'text', name: text.slice(0, 40), direction: 'sent', status: 'done' });
-  }, [selectedPeer, getChannel, sendText, addHistory]);
+    const targets = broadcastMode ? peers : (selectedPeer ? [selectedPeer] : []);
+    targets.forEach(target => {
+      const channel = getChannel(target.id);
+      if (!channel) return;
+      playSend();
+      sendText(channel, text);
+      setMessages(m => [...m, {
+        id: nanoid(), peerId: target.id, content: text, direction: 'sent', timestamp: Date.now(),
+      }]);
+      addHistory({ peerId: target.id, kind: 'text', name: text.slice(0, 40), direction: 'sent', status: 'done' });
+    });
+  }, [broadcastMode, peers, selectedPeer, getChannel, sendText, addHistory]);
 
   if (!nameReady) {
     return <NameEntry onComplete={handleNameSet} />;
@@ -189,7 +195,13 @@ export default function HomePage() {
         signalingStatus={signalingStatus}
         peerStates={peerStates}
         peerQuality={peerQuality}
-        onSelectPeer={(p) => { setSelectedPeer(p); setUnread(u => { const n = new Set(u); n.delete(p.id); return n; }); }}
+        broadcastSelected={broadcastMode}
+        onBroadcastSelect={() => { setBroadcastMode(true); setSelectedPeer(null); }}
+        onSelectPeer={(p) => {
+          setBroadcastMode(false);
+          setSelectedPeer(p);
+          setUnread(u => { const n = new Set(u); n.delete(p.id); return n; });
+        }}
         onNewRoom={() => setQrOpen(true)}
         onJoinRoom={() => setJoinOpen(true)}
         dark={dark}
@@ -225,7 +237,26 @@ export default function HomePage() {
         </div>
 
         <div className="hidden md:flex flex-1 p-6 overflow-auto bg-stone-50 dark:bg-stone-950">
-          {selectedPeer ? (
+          {broadcastMode ? (
+            <div className="flex-1 flex flex-col h-full w-full">
+              <div className="flex items-center gap-3 pb-3 border-b border-stone-100 dark:border-stone-800">
+                <div className="w-9 h-9 bg-stone-900 dark:bg-stone-100 rounded-full flex items-center justify-center text-white dark:text-stone-900 font-bold text-base shrink-0">↗</div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold text-stone-900 dark:text-stone-100">Everyone</p>
+                  <p className="text-[10px] text-stone-400">{peers.length} device{peers.length !== 1 ? 's' : ''}</p>
+                </div>
+                <input ref={fileRef_broadcast} type="file" multiple className="hidden"
+                  onChange={(e) => { const f = Array.from(e.target.files ?? []); if (f.length) handleSendFiles(f); }} />
+                <button onClick={() => fileRef_broadcast.current?.click()}
+                  className="text-xs font-bold bg-stone-900 dark:bg-stone-100 dark:text-stone-900 text-white px-3 py-1.5 rounded-lg hover:bg-stone-700 dark:hover:bg-stone-300 transition-colors">
+                  + File
+                </button>
+              </div>
+              <div className="flex-1 flex items-center justify-center text-stone-400 dark:text-stone-600">
+                <p className="text-sm text-center">Files and messages sent here will be delivered to all {peers.length} connected device{peers.length !== 1 ? 's' : ''}</p>
+              </div>
+            </div>
+          ) : selectedPeer ? (
             <SendPanel
               peer={selectedPeer}
               messages={messages.filter(m => m.peerId === selectedPeer.id)}

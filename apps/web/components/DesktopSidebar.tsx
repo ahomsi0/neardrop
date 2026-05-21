@@ -11,6 +11,8 @@ interface Props {
   signalingStatus: SignalingStatus;
   peerStates: Map<string, RTCPeerConnectionState>;
   peerQuality: Map<string, 'direct' | 'relay' | 'unknown'>;
+  broadcastSelected: boolean;
+  onBroadcastSelect: () => void;
   onSelectPeer: (peer: Peer) => void;
   onNewRoom: () => void;
   onJoinRoom: () => void;
@@ -70,7 +72,7 @@ export function PeerAvatar({ peer, size = 'md' }: { peer: { id: string; emoji: s
   );
 }
 
-export function DesktopSidebar({ me, peers, selectedPeerId, unreadPeerIds, signalingStatus, peerStates, peerQuality, onSelectPeer, onNewRoom, onJoinRoom, dark, onToggleDark }: Props) {
+export function DesktopSidebar({ me, peers, selectedPeerId, unreadPeerIds, signalingStatus, peerStates, peerQuality, broadcastSelected, onBroadcastSelect, onSelectPeer, onNewRoom, onJoinRoom, dark, onToggleDark }: Props) {
   const activePeer = peers.find(p => p.id === selectedPeerId) ?? null;
 
   return (
@@ -143,6 +145,26 @@ export function DesktopSidebar({ me, peers, selectedPeerId, unreadPeerIds, signa
             No devices found yet. Open NearDrop on another device on the same network.
           </p>
         ) : (
+          <>
+          {peers.length > 0 && (
+            <button
+              onClick={onBroadcastSelect}
+              className={[
+                'w-full flex items-center gap-2 px-2 py-2 rounded-xl text-left transition-colors mb-1',
+                broadcastSelected
+                  ? 'bg-white border border-stone-900 shadow-sm dark:bg-stone-800 dark:border-stone-400'
+                  : 'bg-white border border-stone-200 hover:border-stone-300 dark:bg-stone-800 dark:border-stone-700 dark:hover:border-stone-600',
+              ].join(' ')}
+            >
+              <div className="w-7 h-7 rounded-full bg-stone-900 dark:bg-stone-100 flex items-center justify-center text-xs text-white dark:text-stone-900 font-bold shrink-0">
+                ↗
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-bold text-stone-900 dark:text-stone-100">Everyone</p>
+                <p className="text-[10px] text-stone-400">{peers.length} device{peers.length !== 1 ? 's' : ''}</p>
+              </div>
+            </button>
+          )}
           <div className="space-y-1">
             {peers.map(p => {
               const connState = peerStates.get(p.id);
@@ -186,6 +208,7 @@ export function DesktopSidebar({ me, peers, selectedPeerId, unreadPeerIds, signa
               );
             })}
           </div>
+          </>
         )}
       </div>
 
