@@ -205,9 +205,21 @@ export function SendPanel({ peer, messages, onSendFiles, onSendText, outgoing, i
               <div key={t.id}>
                 <TransferProgress transfer={t} />
                 {t.previewUrl && (
-                  <img src={t.previewUrl} alt={t.name}
-                    className="mt-1 max-h-48 rounded-xl object-contain border border-stone-200 dark:border-stone-700 w-full"
-                    onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
+                  <>
+                    {t.mimeType.startsWith('image/') && (
+                      <img src={t.previewUrl} alt={t.name}
+                        className="mt-1 max-h-48 rounded-xl object-contain border border-stone-200 dark:border-stone-700 w-full"
+                        onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
+                    )}
+                    {t.mimeType.startsWith('video/') && (
+                      <video src={t.previewUrl} controls
+                        className="mt-1 w-full max-h-48 rounded-xl border border-stone-200 dark:border-stone-700" />
+                    )}
+                    {t.mimeType.startsWith('audio/') && (
+                      <audio src={t.previewUrl} controls
+                        className="mt-1 w-full rounded-xl" />
+                    )}
+                  </>
                 )}
               </div>
             ))}

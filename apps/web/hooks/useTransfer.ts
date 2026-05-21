@@ -171,7 +171,10 @@ export function useTransfer() {
             const a = document.createElement('a');
             a.href = url; a.download = transfer.name; a.click();
             setTimeout(() => URL.revokeObjectURL(url), 60_000);
-            const previewUrl = transfer.mimeType.startsWith('image/') ? URL.createObjectURL(blob) : undefined;
+            const isPreviewable = transfer.mimeType.startsWith('image/')
+              || transfer.mimeType.startsWith('video/')
+              || transfer.mimeType.startsWith('audio/');
+            const previewUrl = isPreviewable ? URL.createObjectURL(blob) : undefined;
             if (previewUrl) setTimeout(() => URL.revokeObjectURL(previewUrl), 60_000);
             setIncomingWithRef(m => { const n = new Map(m); n.set(msg.id, { ...n.get(msg.id)!, status: 'done', previewUrl }); return n; });
             assemblers.current.delete(msg.id);
