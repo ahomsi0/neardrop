@@ -11,6 +11,8 @@ const BUFFER_THRESHOLD = 16 * 1024 * 1024; // 16MB
 export interface OutgoingTransfer {
   id: string; peerId: string; name: string;
   size: number; progress: number; status: 'pending' | 'sending' | 'done' | 'error';
+  previewUrl?: string;
+  mimeType?: string;
 }
 
 export interface IncomingTransfer {
@@ -18,6 +20,7 @@ export interface IncomingTransfer {
   totalChunks: number; sha256: string;
   status: 'pending' | 'accepted' | 'receiving' | 'done' | 'error';
   progress: number;
+  previewUrl?: string;
 }
 
 export function useTransfer() {
@@ -49,10 +52,12 @@ export function useTransfer() {
       name: file.name, size: file.size, mimeType: file.type,
       totalChunks, sha256,
     };
+    const previewUrl = file.type.startsWith('image/') ? URL.createObjectURL(file) : undefined;
     channel.send(JSON.stringify(offer));
 
     setOutgoing(m => new Map(m).set(id, {
       id, peerId, name: file.name, size: file.size, progress: 0, status: 'pending',
+      mimeType: file.type, previewUrl,
     }));
 
     await new Promise<void>((resolve, reject) => {
@@ -160,7 +165,8 @@ export function useTransfer() {
             const a = document.createElement('a');
             a.href = url; a.download = transfer.name; a.click();
             setTimeout(() => URL.revokeObjectURL(url), 60_000);
-            setIncomingWithRef(m => { const n = new Map(m); n.set(msg.id, { ...n.get(msg.id)!, status: 'done' }); return n; });
+            const previewUrl = transfer.mimeType.startsWith('image/') ? URL.createObjectURL(blob) : undefined;
+            setIncomingWithRef(m => { const n = new Map(m); n.set(msg.id, { ...n.get(msg.id)!, status: 'done', previewUrl }); return n; });
             assemblers.current.delete(msg.id);
           } catch {
             setIncomingWithRef(m => { const n = new Map(m); n.set(msg.id, { ...n.get(msg.id)!, status: 'error' }); return n; });

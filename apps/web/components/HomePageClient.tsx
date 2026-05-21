@@ -41,7 +41,7 @@ export default function HomePage() {
   const [unread, setUnread] = useState<Set<string>>(new Set());
   const [history, setHistory] = useState<HistoryEntry[]>(loadHistory);
 
-  const { outgoing, sendFile, sendText, acceptTransfer, rejectTransfer, handleChannelMessage } =
+  const { outgoing, incoming, sendFile, sendText, acceptTransfer, rejectTransfer, handleChannelMessage } =
     useTransfer();
 
   const { joinRoom, sendSignal, leaveRoom, signalingStatus } = useSignaling({
@@ -213,6 +213,7 @@ export default function HomePage() {
               onSendFiles={handleSendFiles}
               onSendText={handleSendText}
               outgoing={Array.from(outgoing.values()).filter(t => t.peerId === selectedPeer.id)}
+              incoming={Array.from(incoming.values()).filter(t => t.peerId === selectedPeer.id)}
               history={history.filter(h => h.peerId === selectedPeer.id)}
             />
           ) : (
@@ -230,6 +231,7 @@ export default function HomePage() {
         onSendFiles={handleSendFiles}
         onSendText={handleSendText}
         outgoing={Array.from(outgoing.values())}
+        incoming={Array.from(incoming.values())}
         messages={messages}
         history={history}
       />

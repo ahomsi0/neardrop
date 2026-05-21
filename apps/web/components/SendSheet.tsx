@@ -1,6 +1,6 @@
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import type { Peer } from '@neardrop/shared';
-import type { OutgoingTransfer } from '@/hooks/useTransfer';
+import type { OutgoingTransfer, IncomingTransfer } from '@/hooks/useTransfer';
 import type { HistoryEntry } from '@/lib/history';
 import { SendPanel, type Message } from './SendPanel';
 
@@ -11,11 +11,12 @@ interface Props {
   onSendFiles: (files: File[]) => void;
   onSendText: (text: string) => void;
   outgoing: OutgoingTransfer[];
+  incoming: IncomingTransfer[];
   messages: Message[];
   history: HistoryEntry[];
 }
 
-export function SendSheet({ peer, open, onClose, onSendFiles, onSendText, outgoing, messages, history }: Props) {
+export function SendSheet({ peer, open, onClose, onSendFiles, onSendText, outgoing, incoming, messages, history }: Props) {
   return (
     <Sheet open={open} onOpenChange={(o) => !o && onClose()}>
       <SheetContent side="bottom" className="rounded-t-2xl h-[90dvh] bg-stone-50 p-0">
@@ -28,6 +29,7 @@ export function SendSheet({ peer, open, onClose, onSendFiles, onSendText, outgoi
               onSendFiles={onSendFiles}
               onSendText={onSendText}
               outgoing={outgoing.filter(t => t.peerId === peer.id)}
+              incoming={incoming.filter(t => t.peerId === peer.id)}
               history={history.filter(h => h.peerId === peer.id)}
             />
           )}

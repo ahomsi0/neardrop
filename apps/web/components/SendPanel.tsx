@@ -2,7 +2,7 @@
 import { useRef, useState, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import type { Peer } from '@neardrop/shared';
-import type { OutgoingTransfer } from '@/hooks/useTransfer';
+import type { OutgoingTransfer, IncomingTransfer } from '@/hooks/useTransfer';
 import { TransferProgress } from './TransferProgress';
 import { PeerAvatar } from './DesktopSidebar';
 import type { HistoryEntry } from '@/lib/history';
@@ -21,6 +21,7 @@ interface Props {
   onSendFiles: (files: File[]) => void;
   onSendText: (text: string) => void;
   outgoing: OutgoingTransfer[];
+  incoming: IncomingTransfer[];
   history: HistoryEntry[];
 }
 
@@ -28,7 +29,7 @@ function fmt(ts: number) {
   return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
-export function SendPanel({ peer, messages, onSendFiles, onSendText, outgoing, history }: Props) {
+export function SendPanel({ peer, messages, onSendFiles, onSendText, outgoing, incoming, history }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const fileRef  = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -77,7 +78,7 @@ export function SendPanel({ peer, messages, onSendFiles, onSendText, outgoing, h
     setText('');
   }, [text, onSendText]);
 
-  const hasActivity = messages.length > 0 || outgoing.length > 0 || history.length > 0;
+  const hasActivity = messages.length > 0 || outgoing.length > 0 || incoming.length > 0 || history.length > 0;
 
   return (
     <div className="flex flex-col gap-3 h-full w-full">
@@ -128,7 +129,24 @@ export function SendPanel({ peer, messages, onSendFiles, onSendText, outgoing, h
 
         {hasActivity && (
           <div className="mt-auto flex flex-col gap-2 pb-2">
-            {outgoing.map(t => <TransferProgress key={t.id} transfer={t} />)}
+            {outgoing.map(t => (
+              <div key={t.id}>
+                <TransferProgress transfer={t} />
+                {t.previewUrl && (
+                  <img src={t.previewUrl} alt={t.name}
+                    className="mt-1 max-h-48 rounded-xl object-cover border border-stone-200 dark:border-stone-700 w-full" />
+                )}
+              </div>
+            ))}
+            {incoming.map(t => (
+              <div key={t.id}>
+                <TransferProgress transfer={t} />
+                {t.previewUrl && t.status === 'done' && (
+                  <img src={t.previewUrl} alt={t.name}
+                    className="mt-1 max-h-48 rounded-xl object-cover border border-stone-200 dark:border-stone-700 w-full" />
+                )}
+              </div>
+            ))}
 
             {/* Transfer history */}
             {history.length > 0 && (
