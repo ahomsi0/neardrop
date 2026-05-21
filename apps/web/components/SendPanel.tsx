@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import type { Peer } from '@neardrop/shared';
 import type { OutgoingTransfer } from '@/hooks/useTransfer';
 import { TransferProgress } from './TransferProgress';
+import type { HistoryEntry } from '@/lib/history';
 
 export interface Message {
   id: string;
@@ -19,18 +20,20 @@ interface Props {
   onSendFiles: (files: File[]) => void;
   onSendText: (text: string) => void;
   outgoing: OutgoingTransfer[];
+  history: HistoryEntry[];
 }
 
 function fmt(ts: number) {
   return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
-export function SendPanel({ peer, messages, onSendFiles, onSendText, outgoing }: Props) {
+export function SendPanel({ peer, messages, onSendFiles, onSendText, outgoing, history }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [text, setText] = useState('');
   const [isDragging, setIsDragging] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -49,7 +52,7 @@ export function SendPanel({ peer, messages, onSendFiles, onSendText, outgoing }:
     setText('');
   }, [text, onSendText]);
 
-  const hasActivity = messages.length > 0 || outgoing.length > 0;
+  const hasActivity = messages.length > 0 || outgoing.length > 0 || history.length > 0;
 
   return (
     <div className="flex flex-col gap-3 h-full">
@@ -101,6 +104,36 @@ export function SendPanel({ peer, messages, onSendFiles, onSendText, outgoing }:
         {hasActivity && (
           <div className="flex flex-col gap-2 pb-2">
             {outgoing.map(t => <TransferProgress key={t.id} transfer={t} />)}
+
+            {/* Transfer history */}
+            {history.length > 0 && (
+              <div className="border border-stone-200 rounded-xl overflow-hidden">
+                <button
+                  onClick={() => setHistoryOpen(o => !o)}
+                  className="w-full flex items-center justify-between px-3 py-2 text-[11px] font-bold text-stone-500 bg-stone-50 hover:bg-stone-100"
+                >
+                  <span>History ({history.length})</span>
+                  <span>{historyOpen ? '▲' : '▼'}</span>
+                </button>
+                {historyOpen && (
+                  <div className="divide-y divide-stone-100 max-h-48 overflow-y-auto">
+                    {[...history].reverse().map(h => (
+                      <div key={h.id} className="flex items-center gap-2 px-3 py-2">
+                        <span className="text-base">{h.kind === 'file' ? '📁' : '💬'}</span>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs font-medium text-stone-900 truncate">{h.name}</p>
+                          <p className="text-[10px] text-stone-400">
+                            {h.direction === 'sent' ? '↑ sent' : '↓ received'} · {new Date(h.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </p>
+                        </div>
+                        {h.status === 'error' && <span className="text-red-500 text-[10px]">failed</span>}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
             {messages.map(m => (
               <div key={m.id} className={['flex', m.direction === 'sent' ? 'justify-end' : 'justify-start'].join(' ')}>
                 <div className={[

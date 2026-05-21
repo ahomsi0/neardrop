@@ -17,6 +17,7 @@ import { RoomCodeInput } from '@/components/RoomCodeInput';
 import { NameEntry } from '@/components/NameEntry';
 import type { IncomingTransfer } from '@/hooks/useTransfer';
 import type { Message } from '@/components/SendPanel';
+import { loadHistory, saveHistory, type HistoryEntry } from '@/lib/history';
 
 const NAME_SET_KEY = 'neardrop-name-set';
 
@@ -34,6 +35,7 @@ export default function HomePage() {
   const [pendingTransfer, setPendingTransfer] = useState<IncomingTransfer | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [unread, setUnread] = useState<Set<string>>(new Set());
+  const [history, setHistory] = useState<HistoryEntry[]>(loadHistory);
 
   const { outgoing, sendFile, sendText, acceptTransfer, rejectTransfer, handleChannelMessage } =
     useTransfer();
@@ -81,6 +83,15 @@ export default function HomePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nameReady]);
 
+  const addHistory = useCallback((entry: Omit<HistoryEntry, 'id' | 'timestamp'>) => {
+    const full: HistoryEntry = { ...entry, id: nanoid(), timestamp: Date.now() };
+    setHistory(h => {
+      const next = [...h, full];
+      saveHistory(next);
+      return next;
+    });
+  }, []);
+
   const handleNameSet = useCallback((name: string) => {
     const updated = updateDisplayName(name);
     setIdentity(updated);
@@ -92,8 +103,14 @@ export default function HomePage() {
     if (!selectedPeer) return;
     const channel = getChannel(selectedPeer.id);
     if (!channel) return;
-    files.forEach(f => sendFile(selectedPeer.id, f, channel));
-  }, [selectedPeer, getChannel, sendFile]);
+    files.forEach(f => {
+      sendFile(selectedPeer.id, f, channel).then(() => {
+        addHistory({ peerId: selectedPeer.id, kind: 'file', name: f.name, direction: 'sent', status: 'done' });
+      }).catch(() => {
+        addHistory({ peerId: selectedPeer.id, kind: 'file', name: f.name, direction: 'sent', status: 'error' });
+      });
+    });
+  }, [selectedPeer, getChannel, sendFile, addHistory]);
 
   const handleSendText = useCallback((text: string) => {
     if (!selectedPeer) return;
@@ -103,7 +120,8 @@ export default function HomePage() {
     setMessages(m => [...m, {
       id: nanoid(), peerId: selectedPeer.id, content: text, direction: 'sent', timestamp: Date.now(),
     }]);
-  }, [selectedPeer, getChannel, sendText]);
+    addHistory({ peerId: selectedPeer.id, kind: 'text', name: text.slice(0, 40), direction: 'sent', status: 'done' });
+  }, [selectedPeer, getChannel, sendText, addHistory]);
 
   if (!nameReady) {
     return <NameEntry onComplete={handleNameSet} />;
@@ -166,6 +184,7 @@ export default function HomePage() {
               onSendFiles={handleSendFiles}
               onSendText={handleSendText}
               outgoing={Array.from(outgoing.values()).filter(t => t.peerId === selectedPeer.id)}
+              history={history.filter(h => h.peerId === selectedPeer.id)}
             />
           ) : (
             <div className="flex-1 flex flex-col items-center justify-center text-stone-300">
@@ -183,6 +202,7 @@ export default function HomePage() {
         onSendText={handleSendText}
         outgoing={Array.from(outgoing.values())}
         messages={messages}
+        history={history}
       />
 
       <IncomingAlert
@@ -191,6 +211,9 @@ export default function HomePage() {
         onAccept={(id) => {
           const channel = getChannel(pendingTransfer!.peerId);
           if (channel) acceptTransfer(id, channel);
+          if (pendingTransfer) {
+            addHistory({ peerId: pendingTransfer.peerId, kind: 'file', name: pendingTransfer.name, direction: 'received', status: 'done' });
+          }
           setPendingTransfer(null);
         }}
         onReject={(id) => {
