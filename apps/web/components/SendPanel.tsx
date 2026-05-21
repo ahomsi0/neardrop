@@ -47,7 +47,8 @@ export function SendPanel({ peer, messages, onSendFiles, onSendText, outgoing, h
       if (imageItem) {
         const file = imageItem.getAsFile();
         if (file) {
-          const named = new File([file], `pasted-image-${Date.now()}.png`, { type: file.type });
+          const ext = file.type.split('/')[1]?.split('+')[0] ?? 'png';
+          const named = new File([file], `pasted-image-${Date.now()}.${ext}`, { type: file.type });
           onSendFiles([named]);
           return;
         }
@@ -61,7 +62,7 @@ export function SendPanel({ peer, messages, onSendFiles, onSendText, outgoing, h
     };
     window.addEventListener('paste', handlePaste);
     return () => window.removeEventListener('paste', handlePaste);
-  }, [onSendFiles]);
+  }, [onSendFiles, setText]);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
