@@ -38,7 +38,7 @@ export default function HomePage() {
   useEffect(() => { peersRef.current = peers; }, [peers]);
   const [selectedPeer, setSelectedPeer] = useState<Peer | null>(null);
   const [broadcastMode, setBroadcastMode] = useState(false);
-  const fileRef_broadcast = useRef<HTMLInputElement>(null);
+  const broadcastFileRef = useRef<HTMLInputElement>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [qrOpen, setQrOpen] = useState(false);
   const [joinOpen, setJoinOpen] = useState(false);
@@ -245,9 +245,9 @@ export default function HomePage() {
                   <p className="text-sm font-bold text-stone-900 dark:text-stone-100">Everyone</p>
                   <p className="text-[10px] text-stone-400">{peers.length} device{peers.length !== 1 ? 's' : ''}</p>
                 </div>
-                <input ref={fileRef_broadcast} type="file" multiple className="hidden"
+                <input ref={broadcastFileRef} type="file" multiple className="hidden"
                   onChange={(e) => { const f = Array.from(e.target.files ?? []); if (f.length) handleSendFiles(f); }} />
-                <button onClick={() => fileRef_broadcast.current?.click()}
+                <button onClick={() => broadcastFileRef.current?.click()}
                   className="text-xs font-bold bg-stone-900 dark:bg-stone-100 dark:text-stone-900 text-white px-3 py-1.5 rounded-lg hover:bg-stone-700 dark:hover:bg-stone-300 transition-colors">
                   + File
                 </button>
