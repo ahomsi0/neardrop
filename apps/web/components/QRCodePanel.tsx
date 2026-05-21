@@ -19,6 +19,13 @@ export function QRCodePanel({ roomCode, open, onClose, onCreateWithPassword, pas
   const [password, setPassword] = useState('');
   const [copied, setCopied] = useState(false);
 
+  // Auto-reset copied after 2s; cleanup prevents state update after unmount
+  useEffect(() => {
+    if (!copied) return;
+    const id = window.setTimeout(() => setCopied(false), 2000);
+    return () => window.clearTimeout(id);
+  }, [copied]);
+
   useEffect(() => {
     if (open) { setStep('password'); setPassword(''); }
   }, [open]);
@@ -74,13 +81,15 @@ export function QRCodePanel({ roomCode, open, onClose, onCreateWithPassword, pas
               <p className="text-xs text-amber-600 font-medium">🔒 Password protected</p>
             )}
             <button
+              disabled={!roomCode}
               onClick={async () => {
-                const url = `${window.location.origin}/room/${roomCode}`;
-                await navigator.clipboard.writeText(url);
-                setCopied(true);
-                setTimeout(() => setCopied(false), 2000);
+                if (!roomCode) return;
+                try {
+                  await navigator.clipboard.writeText(`${window.location.origin}/room/${roomCode}`);
+                  setCopied(true);
+                } catch { /* permission denied */ }
               }}
-              className="w-full flex items-center justify-center gap-2 text-xs font-bold bg-stone-100 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-stone-700 dark:text-stone-300 px-3 py-2 rounded-xl hover:bg-stone-200 dark:hover:bg-stone-700 transition-colors"
+              className="w-full flex items-center justify-center gap-2 text-xs font-bold bg-stone-100 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-stone-700 dark:text-stone-300 px-3 py-2 rounded-xl hover:bg-stone-200 dark:hover:bg-stone-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {copied ? '✓ Copied!' : '🔗 Copy link'}
             </button>
