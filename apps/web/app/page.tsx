@@ -19,6 +19,7 @@ import type { IncomingTransfer } from '@/hooks/useTransfer';
 import type { Message } from '@/components/SendPanel';
 import { loadHistory, saveHistory, type HistoryEntry } from '@/lib/history';
 import { useDarkMode } from '@/hooks/useDarkMode';
+import { hashPassword } from '@/lib/hashPassword';
 
 const NAME_SET_KEY = 'neardrop-name-set';
 
@@ -34,6 +35,7 @@ export default function HomePage() {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [qrOpen, setQrOpen] = useState(false);
   const [joinOpen, setJoinOpen] = useState(false);
+  const [passwordSet, setPasswordSet] = useState(false);
   const [pendingTransfer, setPendingTransfer] = useState<IncomingTransfer | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [unread, setUnread] = useState<Set<string>>(new Set());
@@ -103,6 +105,18 @@ export default function HomePage() {
       return next;
     });
   }, []);
+
+  const handleCreateRoom = useCallback(async (password: string | null) => {
+    const hash = password ? await hashPassword(password) : undefined;
+    setPasswordSet(!!password);
+    joinRoom({
+      roomCode: undefined,
+      displayName: identity.displayName,
+      emoji: identity.emoji,
+      deviceType: identity.deviceType,
+      passwordHash: hash,
+    });
+  }, [identity, joinRoom]);
 
   const handleNameSet = useCallback((name: string) => {
     const updated = updateDisplayName(name);
@@ -238,9 +252,18 @@ export default function HomePage() {
         }}
       />
 
-      <QRCodePanel roomCode={roomCode} open={qrOpen} onClose={() => setQrOpen(false)} />
+      <QRCodePanel
+        roomCode={roomCode}
+        open={qrOpen}
+        onClose={() => setQrOpen(false)}
+        onCreateWithPassword={handleCreateRoom}
+        passwordSet={passwordSet}
+      />
       <RoomCodeInput open={joinOpen} onClose={() => setJoinOpen(false)}
-        onJoin={(code) => joinRoom({ roomCode: code, displayName: identity.displayName, emoji: identity.emoji, deviceType: identity.deviceType })}
+        onJoin={async (code, password) => {
+          const hash = password ? await hashPassword(password) : undefined;
+          joinRoom({ roomCode: code, displayName: identity.displayName, emoji: identity.emoji, deviceType: identity.deviceType, passwordHash: hash });
+        }}
       />
     </div>
   );

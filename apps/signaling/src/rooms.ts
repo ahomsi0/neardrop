@@ -6,6 +6,7 @@ const nanoid = customAlphabet('ABCDEFGHJKLMNPQRSTUVWXYZ23456789', 6);
 interface RoomEntry {
   peers: Map<string, Peer>;
   lastActivity: number;
+  passwordHash?: string;
 }
 
 export class RoomManager {
@@ -17,10 +18,10 @@ export class RoomManager {
     this.timer = setInterval(() => this.cleanup(), 5 * 60 * 1000);
   }
 
-  createRoom(code?: string): string {
+  createRoom(code?: string, passwordHash?: string): string {
     const roomCode = code ?? nanoid();
     if (!this.rooms.has(roomCode)) {
-      this.rooms.set(roomCode, { peers: new Map(), lastActivity: Date.now() });
+      this.rooms.set(roomCode, { peers: new Map(), lastActivity: Date.now(), passwordHash });
     }
     return roomCode;
   }
@@ -31,6 +32,15 @@ export class RoomManager {
     const code = this.createRoom();
     this.ipToRoom.set(ip, code);
     return code;
+  }
+
+  /** Returns null if ok, or an error code string if password mismatch */
+  checkPassword(roomCode: string, providedHash?: string): string | null {
+    const room = this.rooms.get(roomCode);
+    if (!room) return null;
+    if (!room.passwordHash) return null;
+    if (room.passwordHash === providedHash) return null;
+    return 'WRONG_PASSWORD';
   }
 
   addPeer(roomCode: string, peer: Peer): void {

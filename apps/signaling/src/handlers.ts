@@ -9,6 +9,7 @@ const joinSchema = z.object({
   displayName: z.string().min(1).max(50),
   emoji: z.string().min(1).max(8),
   deviceType: z.enum(['mobile', 'desktop']),
+  passwordHash: z.string().regex(/^[a-f0-9]{64}$/).optional(),
 });
 
 const signalSchema = z.object({
@@ -38,7 +39,7 @@ export function registerHandlers(
     if (!checkRate()) return socket.emit('error', { code: 'RATE_LIMIT', message: 'Too many events' });
     const result = joinSchema.safeParse(raw);
     if (!result.success) return socket.emit('error', { code: 'INVALID', message: 'Bad payload' });
-    const { roomCode, displayName, emoji, deviceType } = result.data;
+    const { roomCode, displayName, emoji, deviceType, passwordHash } = result.data;
 
     const fwd = socket.handshake.headers['x-forwarded-for'];
     const ip = getClientIp(
@@ -47,8 +48,14 @@ export function registerHandlers(
     );
 
     const code = roomCode
-      ? (rooms.roomExists(roomCode) ? roomCode : rooms.createRoom(roomCode))
+      ? (rooms.roomExists(roomCode) ? roomCode : rooms.createRoom(roomCode, passwordHash))
       : rooms.getOrCreateIpRoom(ip);
+
+    const passwordError = rooms.checkPassword(code, passwordHash);
+    if (passwordError) {
+      socket.emit('error', { code: passwordError, message: 'Wrong room password' });
+      return;
+    }
 
     const peers = rooms.getPeers(code);
     if (peers.length >= 10) {
