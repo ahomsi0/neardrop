@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import type { Peer } from '@neardrop/shared';
 import type { OutgoingTransfer } from '@/hooks/useTransfer';
 import { TransferProgress } from './TransferProgress';
+import { PeerAvatar } from './DesktopSidebar';
 import type { HistoryEntry } from '@/lib/history';
 
 export interface Message {
@@ -58,9 +59,7 @@ export function SendPanel({ peer, messages, onSendFiles, onSendText, outgoing, h
     <div className="flex flex-col gap-3 h-full w-full">
       {/* Peer header */}
       <div className="flex items-center gap-3 pb-3 border-b border-stone-100 dark:border-stone-800">
-        <div className="w-9 h-9 bg-white dark:bg-stone-800 rounded-full flex items-center justify-center text-lg border border-stone-200 dark:border-stone-700">
-          {peer.emoji}
-        </div>
+        <PeerAvatar peer={peer} />
         <div className="flex-1 min-w-0">
           <p className="text-sm font-bold text-stone-900 dark:text-stone-100 truncate">{peer.displayName}</p>
           <p className="text-[10px] text-green-600 flex items-center gap-1">
