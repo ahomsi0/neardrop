@@ -55,7 +55,7 @@ export function SendPanel({ peer, messages, onSendFiles, onSendText, outgoing, h
   const hasActivity = messages.length > 0 || outgoing.length > 0 || history.length > 0;
 
   return (
-    <div className="flex flex-col gap-3 h-full">
+    <div className="flex flex-col gap-3 h-full w-full">
       {/* Peer header */}
       <div className="flex items-center gap-3 pb-3 border-b border-stone-100 dark:border-stone-800">
         <div className="w-9 h-9 bg-white dark:bg-stone-800 rounded-full flex items-center justify-center text-lg border border-stone-200 dark:border-stone-700">

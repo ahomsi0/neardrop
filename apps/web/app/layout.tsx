@@ -9,6 +9,7 @@ export const metadata: Metadata = {
   title: 'NearDrop',
   description: 'Instant local file sharing — no account required',
   manifest: '/manifest.json',
+  icons: { icon: '/favicon.svg', apple: '/icon-192.png' },
   appleWebApp: { capable: true, statusBarStyle: 'default', title: 'NearDrop' },
 };
 

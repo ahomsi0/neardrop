@@ -20,6 +20,7 @@ export function generateDeviceName(): { displayName: string; emoji: string } {
 }
 
 export function detectDeviceType(): 'mobile' | 'desktop' {
+  if (typeof navigator === 'undefined') return 'desktop';
   return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)
     ? 'mobile' : 'desktop';
 }
@@ -34,6 +35,11 @@ export interface DeviceIdentity {
 const KEY = 'neardrop-identity';
 
 export function getOrCreateIdentity(): DeviceIdentity {
+  if (typeof window === 'undefined') {
+    // SSR placeholder — never shown to user, replaced on client mount
+    const { displayName, emoji } = generateDeviceName();
+    return { id: 'ssr', displayName, emoji, deviceType: 'desktop' };
+  }
   try {
     const raw = localStorage.getItem(KEY);
     if (raw) return JSON.parse(raw) as DeviceIdentity;

@@ -11,6 +11,7 @@ export interface HistoryEntry {
 const HISTORY_KEY = 'neardrop-history';
 
 export function loadHistory(): HistoryEntry[] {
+  if (typeof window === 'undefined') return [];
   try { return JSON.parse(sessionStorage.getItem(HISTORY_KEY) ?? '[]'); } catch { return []; }
 }
 
