@@ -174,6 +174,25 @@ export default function HomePage() {
     });
   }, [broadcastMode, peers, selectedPeer, getChannel, sendText, addHistory]);
 
+  // Capture OS share target params (text/URL shared from another app)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    const sharedText = params.get('text') || params.get('url') || params.get('title');
+    if (!sharedText) return;
+    sessionStorage.setItem('neardrop-shared-text', sharedText);
+    window.history.replaceState({}, '', '/');
+  }, []);
+
+  // Auto-send stored share target text when a peer is selected
+  useEffect(() => {
+    if (!selectedPeer) return;
+    const sharedText = sessionStorage.getItem('neardrop-shared-text');
+    if (!sharedText) return;
+    sessionStorage.removeItem('neardrop-shared-text');
+    handleSendText(sharedText);
+  }, [selectedPeer, handleSendText]);
+
   if (!nameReady) {
     return <NameEntry onComplete={handleNameSet} />;
   }
