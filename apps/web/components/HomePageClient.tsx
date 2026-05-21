@@ -21,6 +21,8 @@ import { loadHistory, saveHistory, type HistoryEntry } from '@/lib/history';
 import { useDarkMode } from '@/hooks/useDarkMode';
 import { hashPassword } from '@/lib/hashPassword';
 import { playSend, playReceive } from '@/lib/sounds';
+import { requestNotificationPermission, notifyReceived } from '@/lib/notify';
+import { formatBytes } from '@/lib/fileIcons';
 
 const NAME_SET_KEY = 'neardrop-name-set';
 
@@ -66,12 +68,19 @@ export default function HomePage() {
           peerId, e,
           (content) => {
             playReceive();
+            const senderName = peers.find(p => p.id === peerId)?.displayName ?? 'Someone';
+            notifyReceived('NearDrop', `${senderName}: ${content.slice(0, 60)}`);
             setMessages(m => [...m, {
               id: nanoid(), peerId, content, direction: 'received', timestamp: Date.now(),
             }]);
             setUnread(u => new Set(u).add(peerId));
           },
-          (t) => { playReceive(); setPendingTransfer(t); },
+          (t) => {
+            playReceive();
+            const senderName = peers.find(p => p.id === t.peerId)?.displayName ?? 'Someone';
+            notifyReceived('NearDrop', `${senderName} wants to send ${t.name} (${formatBytes(t.size)})`);
+            setPendingTransfer(t);
+          },
         );
     },
     onSendSignal: (to, type, payload) => sendSignal({ to, type, payload }),
@@ -98,6 +107,10 @@ export default function HomePage() {
     return () => leaveRoom();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nameReady]);
+
+  useEffect(() => {
+    requestNotificationPermission();
+  }, []);
 
   const addHistory = useCallback((entry: Omit<HistoryEntry, 'id' | 'timestamp'>) => {
     const full: HistoryEntry = { ...entry, id: nanoid(), timestamp: Date.now() };
