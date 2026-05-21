@@ -20,6 +20,7 @@ import type { Message } from '@/components/SendPanel';
 import { loadHistory, saveHistory, type HistoryEntry } from '@/lib/history';
 import { useDarkMode } from '@/hooks/useDarkMode';
 import { hashPassword } from '@/lib/hashPassword';
+import { playSend, playReceive } from '@/lib/sounds';
 
 const NAME_SET_KEY = 'neardrop-name-set';
 
@@ -64,12 +65,13 @@ export default function HomePage() {
         handleChannelMessage(
           peerId, e,
           (content) => {
+            playReceive();
             setMessages(m => [...m, {
               id: nanoid(), peerId, content, direction: 'received', timestamp: Date.now(),
             }]);
             setUnread(u => new Set(u).add(peerId));
           },
-          (t) => setPendingTransfer(t),
+          (t) => { playReceive(); setPendingTransfer(t); },
         );
     },
     onSendSignal: (to, type, payload) => sendSignal({ to, type, payload }),
@@ -130,6 +132,7 @@ export default function HomePage() {
     const channel = getChannel(selectedPeer.id);
     if (!channel) return;
     files.forEach(f => {
+      playSend();
       sendFile(selectedPeer.id, f, channel).then(() => {
         addHistory({ peerId: selectedPeer.id, kind: 'file', name: f.name, direction: 'sent', status: 'done' });
       }).catch(() => {
@@ -142,6 +145,7 @@ export default function HomePage() {
     if (!selectedPeer) return;
     const channel = getChannel(selectedPeer.id);
     if (!channel) return;
+    playSend();
     sendText(channel, text);
     setMessages(m => [...m, {
       id: nanoid(), peerId: selectedPeer.id, content: text, direction: 'sent', timestamp: Date.now(),
