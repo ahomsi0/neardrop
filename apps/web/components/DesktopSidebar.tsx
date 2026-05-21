@@ -50,10 +50,9 @@ export function DesktopSidebar({ me, peers, selectedPeerId, unreadPeerIds, signa
           <StatusDot status={signalingStatus} />
           <button
             onClick={onToggleDark}
-            title={dark ? 'Switch to light mode' : 'Switch to dark mode'}
-            className="ml-auto text-stone-400 hover:text-stone-600 text-sm leading-none"
+            className="ml-auto text-[10px] font-bold text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 tracking-wide transition-colors"
           >
-            {dark ? '☀️' : '🌙'}
+            {dark ? 'Light' : 'Dark'}
           </button>
         </div>
       </div>
