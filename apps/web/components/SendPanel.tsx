@@ -109,18 +109,23 @@ export function SendPanel({ peer, messages, onSendFiles, onSendText, outgoing, i
           onChange={async (e) => {
             const files = Array.from(e.target.files ?? []);
             if (!files.length) return;
-            const zip = new JSZip();
-            files.forEach(f => {
-              const path = (f as File & { webkitRelativePath: string }).webkitRelativePath || f.name;
-              zip.file(path, f);
-            });
-            const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE' });
-            const folderName = files[0]
-              ? (files[0] as File & { webkitRelativePath: string }).webkitRelativePath.split('/')[0]
-              : 'folder';
-            const zipFile = new File([blob], `${folderName}.zip`, { type: 'application/zip' });
-            onSendFiles([zipFile]);
-            e.target.value = '';
+            try {
+              const zip = new JSZip();
+              files.forEach(f => {
+                const path = (f as File & { webkitRelativePath: string }).webkitRelativePath || f.name;
+                zip.file(path, f);
+              });
+              const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE' });
+              const folderName = files[0]
+                ? (files[0] as File & { webkitRelativePath: string }).webkitRelativePath.split('/')[0]
+                : 'folder';
+              const zipFile = new File([blob], `${folderName}.zip`, { type: 'application/zip' });
+              onSendFiles([zipFile]);
+            } catch (err) {
+              console.error('[SendPanel] zip generation failed', err);
+            } finally {
+              e.target.value = '';
+            }
           }}
         />
         <button
