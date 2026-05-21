@@ -177,16 +177,16 @@ export default function HomePage() {
         onToggleDark={toggleDark}
       />
 
-      <main className="flex-1 flex flex-col overflow-hidden">
+      <main className="flex-1 flex flex-col overflow-hidden bg-stone-50 dark:bg-stone-950">
         <div className="md:hidden flex items-center justify-between px-4 pt-4 pb-2">
-          <h1 className="text-base font-extrabold text-stone-900">NearDrop</h1>
+          <h1 className="text-base font-extrabold text-stone-900 dark:text-stone-100">NearDrop</h1>
           <div className="flex gap-2">
             <button onClick={() => setQrOpen(true)}
-              className="text-xs font-bold bg-stone-900 text-white px-3 py-1.5 rounded-lg">
+              className="text-xs font-bold bg-stone-900 dark:bg-stone-100 dark:text-stone-900 text-white px-3 py-1.5 rounded-lg">
               Invite
             </button>
             <button onClick={() => setJoinOpen(true)}
-              className="text-xs font-bold bg-white border border-stone-200 text-stone-900 px-3 py-1.5 rounded-lg">
+              className="text-xs font-bold bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-stone-900 dark:text-stone-100 px-3 py-1.5 rounded-lg">
               Join
             </button>
           </div>
@@ -205,7 +205,7 @@ export default function HomePage() {
           )}
         </div>
 
-        <div className="hidden md:flex flex-1 p-6 overflow-auto">
+        <div className="hidden md:flex flex-1 p-6 overflow-auto bg-stone-50 dark:bg-stone-950">
           {selectedPeer ? (
             <SendPanel
               peer={selectedPeer}
@@ -216,7 +216,7 @@ export default function HomePage() {
               history={history.filter(h => h.peerId === selectedPeer.id)}
             />
           ) : (
-            <div className="flex-1 flex flex-col items-center justify-center text-stone-300">
+            <div className="flex-1 flex flex-col items-center justify-center text-stone-300 dark:text-stone-700">
               <span className="text-5xl mb-3">←</span>
               <p className="text-sm font-medium">Select a device to send files</p>
             </div>
