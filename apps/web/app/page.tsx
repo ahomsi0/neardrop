@@ -18,6 +18,7 @@ import { NameEntry } from '@/components/NameEntry';
 import type { IncomingTransfer } from '@/hooks/useTransfer';
 import type { Message } from '@/components/SendPanel';
 import { loadHistory, saveHistory, type HistoryEntry } from '@/lib/history';
+import { useDarkMode } from '@/hooks/useDarkMode';
 
 const NAME_SET_KEY = 'neardrop-name-set';
 
@@ -27,6 +28,7 @@ export default function HomePage() {
     try { return !!localStorage.getItem(NAME_SET_KEY); } catch { return false; }
   });
 
+  const { dark, toggle: toggleDark } = useDarkMode();
   const { peers, roomCode, setRoomJoined, addPeer, removePeer } = usePeers();
   const [selectedPeer, setSelectedPeer] = useState<Peer | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -146,6 +148,8 @@ export default function HomePage() {
         onSelectPeer={(p) => { setSelectedPeer(p); setUnread(u => { const n = new Set(u); n.delete(p.id); return n; }); }}
         onNewRoom={() => setQrOpen(true)}
         onJoinRoom={() => setJoinOpen(true)}
+        dark={dark}
+        onToggleDark={toggleDark}
       />
 
       <main className="flex-1 flex flex-col overflow-hidden">

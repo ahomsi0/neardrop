@@ -13,6 +13,8 @@ interface Props {
   onSelectPeer: (peer: Peer) => void;
   onNewRoom: () => void;
   onJoinRoom: () => void;
+  dark: boolean;
+  onToggleDark: () => void;
 }
 
 function shortId(id: string) {
@@ -35,30 +37,37 @@ function StatusDot({ status }: { status: SignalingStatus }) {
   );
 }
 
-export function DesktopSidebar({ me, peers, selectedPeerId, unreadPeerIds, signalingStatus, peerStates, onSelectPeer, onNewRoom, onJoinRoom }: Props) {
+export function DesktopSidebar({ me, peers, selectedPeerId, unreadPeerIds, signalingStatus, peerStates, onSelectPeer, onNewRoom, onJoinRoom, dark, onToggleDark }: Props) {
   const activePeer = peers.find(p => p.id === selectedPeerId) ?? null;
 
   return (
-    <aside className="hidden md:flex w-60 flex-col bg-stone-100 border-r border-stone-200 shrink-0">
+    <aside className="hidden md:flex w-60 flex-col bg-stone-100 border-r border-stone-200 shrink-0 dark:bg-stone-900 dark:border-stone-800">
       {/* App header */}
-      <div className="p-4 pb-3 border-b border-stone-200">
+      <div className="p-4 pb-3 border-b border-stone-200 dark:border-stone-800">
         <div className="flex items-center gap-2">
-          <h1 className="text-lg font-extrabold text-stone-900 tracking-tight">NearDrop</h1>
+          <h1 className="text-lg font-extrabold text-stone-900 tracking-tight dark:text-stone-100">NearDrop</h1>
           <StatusDot status={signalingStatus} />
+          <button
+            onClick={onToggleDark}
+            title={dark ? 'Switch to light mode' : 'Switch to dark mode'}
+            className="ml-auto text-stone-400 hover:text-stone-600 text-sm leading-none"
+          >
+            {dark ? '☀️' : '🌙'}
+          </button>
         </div>
       </div>
 
       {/* Your identity */}
-      <div className="px-3 py-3 border-b border-stone-200">
-        <p className="text-[9px] font-bold text-stone-400 uppercase tracking-widest mb-2">You</p>
+      <div className="px-3 py-3 border-b border-stone-200 dark:border-stone-800">
+        <p className="text-[9px] font-bold text-stone-400 uppercase tracking-widest mb-2 dark:text-stone-500">You</p>
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center text-base border border-stone-200 shrink-0">
+          <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center text-base border border-stone-200 shrink-0 dark:bg-stone-800 dark:border-stone-700">
             {me.emoji}
           </div>
           <div className="min-w-0">
             <div className="flex items-baseline gap-1.5">
-              <p className="text-xs font-bold text-stone-900 truncate">{me.displayName}</p>
-              <span className="text-[9px] font-mono text-stone-400 shrink-0">#{shortId(me.id)}</span>
+              <p className="text-xs font-bold text-stone-900 truncate dark:text-stone-100">{me.displayName}</p>
+              <span className="text-[9px] font-mono text-stone-400 shrink-0 dark:text-stone-500">#{shortId(me.id)}</span>
             </div>
             <p className="text-[10px] text-green-600 flex items-center gap-1">
               <span className="w-1.5 h-1.5 bg-green-500 rounded-full inline-block" />
@@ -70,25 +79,25 @@ export function DesktopSidebar({ me, peers, selectedPeerId, unreadPeerIds, signa
 
       {/* Active room */}
       {activePeer && (
-        <div className="px-3 py-3 border-b border-stone-200 bg-stone-50">
-          <p className="text-[9px] font-bold text-stone-400 uppercase tracking-widest mb-2">Room</p>
-          <div className="bg-white rounded-xl border border-stone-200 px-3 py-2.5 space-y-2">
+        <div className="px-3 py-3 border-b border-stone-200 bg-stone-50 dark:border-stone-800 dark:bg-stone-800">
+          <p className="text-[9px] font-bold text-stone-400 uppercase tracking-widest mb-2 dark:text-stone-500">Room</p>
+          <div className="bg-white rounded-xl border border-stone-200 px-3 py-2.5 space-y-2 dark:bg-stone-900 dark:border-stone-700">
             <div className="flex items-center gap-2">
               <span className="text-sm">{me.emoji}</span>
               <div className="min-w-0">
                 <div className="flex items-baseline gap-1">
-                  <p className="text-[11px] font-bold text-stone-900 truncate">{me.displayName}</p>
-                  <span className="text-[9px] font-mono text-stone-400">#{shortId(me.id)}</span>
+                  <p className="text-[11px] font-bold text-stone-900 truncate dark:text-stone-100">{me.displayName}</p>
+                  <span className="text-[9px] font-mono text-stone-400 dark:text-stone-500">#{shortId(me.id)}</span>
                 </div>
               </div>
             </div>
-            <div className="border-t border-stone-100" />
+            <div className="border-t border-stone-100 dark:border-stone-700" />
             <div className="flex items-center gap-2">
               <span className="text-sm">{activePeer.emoji}</span>
               <div className="min-w-0">
                 <div className="flex items-baseline gap-1">
-                  <p className="text-[11px] font-bold text-stone-900 truncate">{activePeer.displayName}</p>
-                  <span className="text-[9px] font-mono text-stone-400">#{shortId(activePeer.id)}</span>
+                  <p className="text-[11px] font-bold text-stone-900 truncate dark:text-stone-100">{activePeer.displayName}</p>
+                  <span className="text-[9px] font-mono text-stone-400 dark:text-stone-500">#{shortId(activePeer.id)}</span>
                 </div>
               </div>
             </div>
@@ -98,9 +107,9 @@ export function DesktopSidebar({ me, peers, selectedPeerId, unreadPeerIds, signa
 
       {/* Nearby devices */}
       <div className="flex-1 overflow-y-auto px-3 py-3">
-        <p className="text-[9px] font-bold text-stone-400 uppercase tracking-widest mb-2">Nearby</p>
+        <p className="text-[9px] font-bold text-stone-400 uppercase tracking-widest mb-2 dark:text-stone-500">Nearby</p>
         {peers.length === 0 ? (
-          <p className="text-[11px] text-stone-400 leading-relaxed">
+          <p className="text-[11px] text-stone-400 leading-relaxed dark:text-stone-500">
             No devices found yet. Open NearDrop on another device on the same network.
           </p>
         ) : (
@@ -115,15 +124,15 @@ export function DesktopSidebar({ me, peers, selectedPeerId, unreadPeerIds, signa
                   className={[
                     'w-full flex items-center gap-2 px-2 py-2 rounded-xl text-left transition-colors',
                     p.id === selectedPeerId
-                      ? 'bg-white border border-stone-900 shadow-sm'
-                      : 'bg-white border border-stone-200 hover:border-stone-300',
+                      ? 'bg-white border border-stone-900 shadow-sm dark:bg-stone-800 dark:border-stone-400'
+                      : 'bg-white border border-stone-200 hover:border-stone-300 dark:bg-stone-800 dark:border-stone-700 dark:hover:border-stone-600',
                   ].join(' ')}
                 >
                   <span className="text-base">{p.emoji}</span>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-baseline gap-1.5">
-                      <p className="text-xs font-bold text-stone-900 truncate">{p.displayName}</p>
-                      <span className="text-[9px] font-mono text-stone-400 shrink-0">#{shortId(p.id)}</span>
+                      <p className="text-xs font-bold text-stone-900 truncate dark:text-stone-100">{p.displayName}</p>
+                      <span className="text-[9px] font-mono text-stone-400 shrink-0 dark:text-stone-500">#{shortId(p.id)}</span>
                     </div>
                     <p className={`text-[10px] flex items-center gap-1 ${isConnected ? 'text-green-600' : 'text-yellow-600'}`}>
                       <span className={`w-1 h-1 rounded-full inline-block ${isConnected ? 'bg-green-500' : 'bg-yellow-400'}`} />
@@ -141,13 +150,13 @@ export function DesktopSidebar({ me, peers, selectedPeerId, unreadPeerIds, signa
       </div>
 
       {/* Actions */}
-      <div className="p-3 border-t border-stone-200 grid grid-cols-2 gap-1.5">
+      <div className="p-3 border-t border-stone-200 grid grid-cols-2 gap-1.5 dark:border-stone-800">
         <Button size="sm" onClick={onNewRoom}
-          className="bg-stone-900 text-white hover:bg-stone-700 rounded-lg text-[10px] h-8">
+          className="bg-stone-900 text-white hover:bg-stone-700 rounded-lg text-[10px] h-8 dark:bg-stone-100 dark:text-stone-900 dark:hover:bg-stone-300">
           Invite
         </Button>
         <Button size="sm" variant="outline" onClick={onJoinRoom}
-          className="border-stone-200 text-stone-900 rounded-lg text-[10px] h-8">
+          className="border-stone-200 text-stone-900 rounded-lg text-[10px] h-8 dark:border-stone-700 dark:text-stone-100">
           Join
         </Button>
       </div>
