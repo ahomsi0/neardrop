@@ -34,9 +34,11 @@ export default function HomePage() {
   });
 
   const { dark, toggle: toggleDark } = useDarkMode();
-  const { peers, roomCode, setRoomJoined, addPeer, removePeer } = usePeers();
+  const { peers, roomCode, setRoomJoined, addPeer, removePeer, reset: resetPeers } = usePeers();
   const peersRef = useRef(peers);
   useEffect(() => { peersRef.current = peers; }, [peers]);
+  const identityRef = useRef(identity);
+  useEffect(() => { identityRef.current = identity; }, [identity]);
   const [selectedPeer, setSelectedPeer] = useState<Peer | null>(null);
   const [broadcastMode, setBroadcastMode] = useState(false);
   const broadcastFileRef = useRef<HTMLInputElement>(null);
@@ -55,6 +57,8 @@ export default function HomePage() {
   const { outgoing, incoming, sendFile, sendText, acceptTransfer, rejectTransfer, handleChannelMessage } =
     useTransfer();
 
+  const closeAllRef = useRef<(() => void) | null>(null);
+
   const { joinRoom, sendSignal, leaveRoom, signalingStatus } = useSignaling({
     onRoomJoined: ({ roomCode: code, peers: existingPeers }) => {
       setRoomJoined(code, existingPeers);
@@ -65,11 +69,19 @@ export default function HomePage() {
     },
     onPeerLeft: ({ peerId }) => removePeer(peerId),
     onSignal: ({ from, type, payload }) => handleSignal(from, type, payload),
+    onDisconnect: () => {
+      closeAllRef.current?.();
+      resetPeers();
+    },
+    onReconnect: () => {
+      const id = identityRef.current;
+      joinRoom({ displayName: id.displayName, emoji: id.emoji, deviceType: id.deviceType });
+    },
   });
 
   const [peerQuality, setPeerQuality] = useState<Map<string, 'direct' | 'relay' | 'unknown'>>(new Map());
 
-  const { initiateConnection, handleSignal, getChannel, getConnection, peerStates, getQuality } = useWebRTC({
+  const { initiateConnection, handleSignal, closeAll, getChannel, getConnection, peerStates, getQuality } = useWebRTC({
     onChannel: (peerId, channel) => {
       channel.onmessage = (e) =>
         handleChannelMessage(
@@ -101,6 +113,8 @@ export default function HomePage() {
       }
     },
   });
+
+  useEffect(() => { closeAllRef.current = closeAll; }, [closeAll]);
 
   useEffect(() => {
     if (!nameReady) return;

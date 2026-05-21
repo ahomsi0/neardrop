@@ -10,11 +10,13 @@ export type SignalingSocket = Socket<ServerToClientEvents, ClientToServerEvents>
 export type SignalingStatus = 'connecting' | 'connected' | 'disconnected';
 
 export interface SignalingHandlers {
-  onRoomJoined: (payload: { roomCode: string; peers: Peer[] }) => void;
-  onPeerJoined: (payload: { peer: Peer }) => void;
-  onPeerLeft:   (payload: { peerId: string }) => void;
-  onSignal:     (payload: { from: string; type: 'offer' | 'answer' | 'ice'; payload: unknown }) => void;
-  onError?:     (payload: { code: string; message: string }) => void;
+  onRoomJoined:  (payload: { roomCode: string; peers: Peer[] }) => void;
+  onPeerJoined:  (payload: { peer: Peer }) => void;
+  onPeerLeft:    (payload: { peerId: string }) => void;
+  onSignal:      (payload: { from: string; type: 'offer' | 'answer' | 'ice'; payload: unknown }) => void;
+  onError?:      (payload: { code: string; message: string }) => void;
+  onDisconnect?: () => void;
+  onReconnect?:  () => void;
 }
 
 const SIGNALING_URL = process.env.NEXT_PUBLIC_SIGNALING_URL ?? 'http://localhost:3001';
@@ -37,10 +39,10 @@ export function useSignaling(handlers: SignalingHandlers) {
     socketRef.current = socket;
 
     socket.on('connect',       () => setSignalingStatus('connected'));
-    socket.on('disconnect',    () => setSignalingStatus('disconnected'));
+    socket.on('disconnect',    () => { setSignalingStatus('disconnected'); handlersRef.current.onDisconnect?.(); });
     socket.on('connect_error', () => setSignalingStatus('disconnected'));
     socket.io.on('reconnect_attempt', () => setSignalingStatus('connecting'));
-    socket.io.on('reconnect',         () => setSignalingStatus('connected'));
+    socket.io.on('reconnect',         () => { setSignalingStatus('connected'); handlersRef.current.onReconnect?.(); });
 
     socket.on('room-joined', (p) => handlersRef.current.onRoomJoined(p));
     socket.on('peer-joined', (p) => handlersRef.current.onPeerJoined(p));

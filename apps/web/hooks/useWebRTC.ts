@@ -44,6 +44,16 @@ export function useWebRTC(handlers: WebRTCHandlers) {
     connections.current.get(peerId)?.close();
     connections.current.delete(peerId);
     channels.current.delete(peerId);
+    connStateMap.current.delete(peerId);
+    setPeerStates(new Map(connStateMap.current));
+  }, []);
+
+  const closeAll = useCallback(() => {
+    for (const pc of connections.current.values()) pc.close();
+    connections.current.clear();
+    channels.current.clear();
+    connStateMap.current.clear();
+    setPeerStates(new Map());
   }, []);
 
   const createConnection = useCallback((peerId: string, isInitiator: boolean) => {
@@ -124,5 +134,5 @@ export function useWebRTC(handlers: WebRTCHandlers) {
     return 'unknown';
   }, []);
 
-  return { initiateConnection, handleSignal, closeConnection, getChannel, getConnection, peerStates, getQuality };
+  return { initiateConnection, handleSignal, closeConnection, closeAll, getChannel, getConnection, peerStates, getQuality };
 }
