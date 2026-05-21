@@ -21,6 +21,10 @@ interface Props {
   outgoing: OutgoingTransfer[];
 }
 
+function fmt(ts: number) {
+  return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
 export function SendPanel({ peer, messages, onSendFiles, onSendText, outgoing }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -105,7 +109,10 @@ export function SendPanel({ peer, messages, onSendFiles, onSendText, outgoing }:
                     ? 'bg-stone-900 text-white rounded-br-sm'
                     : 'bg-white border border-stone-200 text-stone-900 rounded-bl-sm',
                 ].join(' ')}>
-                  {m.content}
+                  <p>{m.content}</p>
+                  <p className={`text-[9px] mt-1 ${m.direction === 'sent' ? 'text-stone-400' : 'text-stone-400'}`}>
+                    {fmt(m.timestamp)}
+                  </p>
                 </div>
               </div>
             ))}
