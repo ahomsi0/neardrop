@@ -54,7 +54,9 @@ export default function HomePage() {
     onSignal: ({ from, type, payload }) => handleSignal(from, type, payload),
   });
 
-  const { initiateConnection, handleSignal, getChannel, getConnection, peerStates } = useWebRTC({
+  const [peerQuality, setPeerQuality] = useState<Map<string, 'direct' | 'relay' | 'unknown'>>(new Map());
+
+  const { initiateConnection, handleSignal, getChannel, getConnection, peerStates, getQuality } = useWebRTC({
     onChannel: (peerId, channel) => {
       channel.onmessage = (e) =>
         handleChannelMessage(
@@ -69,6 +71,14 @@ export default function HomePage() {
         );
     },
     onSendSignal: (to, type, payload) => sendSignal({ to, type, payload }),
+    onConnectionChange: (peerId, state) => {
+      if (state === 'connected') {
+        setTimeout(async () => {
+          const q = await getQuality(peerId);
+          setPeerQuality(m => new Map(m).set(peerId, q));
+        }, 1500);
+      }
+    },
   });
 
   useEffect(() => {
@@ -145,6 +155,7 @@ export default function HomePage() {
         unreadPeerIds={unread}
         signalingStatus={signalingStatus}
         peerStates={peerStates}
+        peerQuality={peerQuality}
         onSelectPeer={(p) => { setSelectedPeer(p); setUnread(u => { const n = new Set(u); n.delete(p.id); return n; }); }}
         onNewRoom={() => setQrOpen(true)}
         onJoinRoom={() => setJoinOpen(true)}

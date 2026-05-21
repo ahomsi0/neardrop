@@ -10,6 +10,7 @@ interface Props {
   unreadPeerIds: Set<string>;
   signalingStatus: SignalingStatus;
   peerStates: Map<string, RTCPeerConnectionState>;
+  peerQuality: Map<string, 'direct' | 'relay' | 'unknown'>;
   onSelectPeer: (peer: Peer) => void;
   onNewRoom: () => void;
   onJoinRoom: () => void;
@@ -37,7 +38,7 @@ function StatusDot({ status }: { status: SignalingStatus }) {
   );
 }
 
-export function DesktopSidebar({ me, peers, selectedPeerId, unreadPeerIds, signalingStatus, peerStates, onSelectPeer, onNewRoom, onJoinRoom, dark, onToggleDark }: Props) {
+export function DesktopSidebar({ me, peers, selectedPeerId, unreadPeerIds, signalingStatus, peerStates, peerQuality, onSelectPeer, onNewRoom, onJoinRoom, dark, onToggleDark }: Props) {
   const activePeer = peers.find(p => p.id === selectedPeerId) ?? null;
 
   return (
@@ -138,6 +139,16 @@ export function DesktopSidebar({ me, peers, selectedPeerId, unreadPeerIds, signa
                       <span className={`w-1 h-1 rounded-full inline-block ${isConnected ? 'bg-green-500' : 'bg-yellow-400'}`} />
                       {connState ?? 'connecting…'}
                     </p>
+                    {peerQuality.has(p.id) && peerQuality.get(p.id) !== 'unknown' && (
+                      <span className={[
+                        'text-[9px] font-mono px-1.5 py-0.5 rounded-full',
+                        peerQuality.get(p.id) === 'direct'
+                          ? 'bg-green-100 text-green-700'
+                          : 'bg-yellow-100 text-yellow-700',
+                      ].join(' ')}>
+                        {peerQuality.get(p.id) === 'relay' ? '⚡ relay' : '⚡ direct'}
+                      </span>
+                    )}
                   </div>
                   {unreadPeerIds.has(p.id) && (
                     <span className="w-2 h-2 bg-blue-500 rounded-full shrink-0" />

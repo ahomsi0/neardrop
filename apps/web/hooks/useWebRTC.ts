@@ -107,5 +107,22 @@ export function useWebRTC(handlers: WebRTCHandlers) {
   const getChannel = useCallback((peerId: string) => channels.current.get(peerId), []);
   const getConnection = useCallback((peerId: string) => connections.current.get(peerId), []);
 
-  return { initiateConnection, handleSignal, closeConnection, getChannel, getConnection, peerStates };
+  const getQuality = useCallback(async (peerId: string): Promise<'direct' | 'relay' | 'unknown'> => {
+    const pc = connections.current.get(peerId);
+    if (!pc) return 'unknown';
+    try {
+      const stats = await pc.getStats();
+      for (const report of stats.values()) {
+        const r = report as unknown as { type: string; state: string; nominated: boolean; localCandidateId: string; candidateType: string };
+        if (r.type === 'candidate-pair' && r.state === 'succeeded' && r.nominated) {
+          const local = stats.get(r.localCandidateId) as unknown as { candidateType: string } | undefined;
+          if (local?.candidateType === 'relay') return 'relay';
+          return 'direct';
+        }
+      }
+    } catch { /* ignore */ }
+    return 'unknown';
+  }, []);
+
+  return { initiateConnection, handleSignal, closeConnection, getChannel, getConnection, peerStates, getQuality };
 }
