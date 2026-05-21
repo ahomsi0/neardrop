@@ -17,6 +17,7 @@ export function QRCodePanel({ roomCode, open, onClose, onCreateWithPassword, pas
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [step, setStep] = useState<'password' | 'qr'>('password');
   const [password, setPassword] = useState('');
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     if (open) { setStep('password'); setPassword(''); }
@@ -72,6 +73,17 @@ export function QRCodePanel({ roomCode, open, onClose, onCreateWithPassword, pas
             {passwordSet && (
               <p className="text-xs text-amber-600 font-medium">🔒 Password protected</p>
             )}
+            <button
+              onClick={async () => {
+                const url = `${window.location.origin}/room/${roomCode}`;
+                await navigator.clipboard.writeText(url);
+                setCopied(true);
+                setTimeout(() => setCopied(false), 2000);
+              }}
+              className="w-full flex items-center justify-center gap-2 text-xs font-bold bg-stone-100 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-stone-700 dark:text-stone-300 px-3 py-2 rounded-xl hover:bg-stone-200 dark:hover:bg-stone-700 transition-colors"
+            >
+              {copied ? '✓ Copied!' : '🔗 Copy link'}
+            </button>
             <p className="text-xs text-stone-400">Expires after 10 minutes of inactivity</p>
           </div>
         )}

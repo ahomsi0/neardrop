@@ -5,13 +5,17 @@ import { useRouter, useParams } from 'next/navigation';
 export default function RoomJoinPage() {
   const router = useRouter();
   const params = useParams<{ code: string }>();
+
   useEffect(() => {
-    sessionStorage.setItem('neardrop-join-code', params.code.toUpperCase());
+    if (params.code) {
+      try { sessionStorage.setItem('neardrop-join-code', params.code); } catch { /* ignore */ }
+    }
     router.replace('/');
   }, [params.code, router]);
+
   return (
-    <div className="h-dvh flex items-center justify-center bg-stone-50">
-      <p className="text-sm text-stone-400">Joining room {params.code}…</p>
+    <div className="flex h-dvh items-center justify-center bg-stone-50 dark:bg-stone-950">
+      <p className="text-sm text-stone-400">Joining room…</p>
     </div>
   );
 }
