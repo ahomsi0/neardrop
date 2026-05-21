@@ -2,7 +2,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { nanoid } from 'nanoid';
 import type { Peer } from '@neardrop/shared';
-import { getOrCreateIdentity, updateDisplayName } from '@/lib/deviceName';
+import { getOrCreateIdentity, updateIdentity } from '@/lib/deviceName';
 import { useSignaling } from '@/hooks/useSignaling';
 import { usePeers } from '@/hooks/usePeers';
 import { useWebRTC } from '@/hooks/useWebRTC';
@@ -118,8 +118,8 @@ export default function HomePage() {
     });
   }, [identity, joinRoom]);
 
-  const handleNameSet = useCallback((name: string) => {
-    const updated = updateDisplayName(name);
+  const handleNameSet = useCallback((name: string, emoji: string) => {
+    const updated = updateIdentity(name, emoji);
     setIdentity(updated);
     try { localStorage.setItem(NAME_SET_KEY, '1'); } catch { /* ignore */ }
     setNameReady(true);

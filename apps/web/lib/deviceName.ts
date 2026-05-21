@@ -4,7 +4,7 @@ const ADJECTIVES = [
   'Noble', 'Proud', 'Quick', 'Sharp', 'Smart', 'Vivid', 'Zesty', 'Fierce',
 ];
 
-const ANIMALS: { name: string; emoji: string }[] = [
+export const ANIMALS: { name: string; emoji: string }[] = [
   { name: 'Fox',     emoji: '🦊' }, { name: 'Penguin', emoji: '🐧' },
   { name: 'Otter',   emoji: '🦦' }, { name: 'Panda',   emoji: '🐼' },
   { name: 'Wolf',    emoji: '🐺' }, { name: 'Eagle',   emoji: '🦅' },
@@ -52,6 +52,13 @@ export function getOrCreateIdentity(): DeviceIdentity {
 export function updateDisplayName(displayName: string): DeviceIdentity {
   const current = getOrCreateIdentity();
   const updated = { ...current, displayName };
+  try { localStorage.setItem(KEY, JSON.stringify(updated)); } catch { /* ignore */ }
+  return updated;
+}
+
+export function updateIdentity(displayName: string, emoji: string): DeviceIdentity {
+  const current = getOrCreateIdentity();
+  const updated = { ...current, displayName, emoji };
   try { localStorage.setItem(KEY, JSON.stringify(updated)); } catch { /* ignore */ }
   return updated;
 }
