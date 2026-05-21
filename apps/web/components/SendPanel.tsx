@@ -94,15 +94,36 @@ export function SendPanel({ peer, messages, onSendFiles, onSendText, outgoing, i
             P2P connected
           </p>
         </div>
+        <input ref={fileRef} type="file" multiple className="hidden"
+          onChange={(e) => { const f = Array.from(e.target.files ?? []); if (f.length) onSendFiles(f); }}
+        />
+        <button
+          onClick={async () => {
+            try {
+              const text = await navigator.clipboard.readText();
+              if (!text.trim()) return;
+              if (text.length > 500) {
+                const blob = new Blob([text], { type: 'text/plain' });
+                const file = new File([blob], `clipboard-${Date.now()}.txt`, { type: 'text/plain' });
+                onSendFiles([file]);
+              } else {
+                setText(text.trim());
+                inputRef.current?.focus();
+              }
+            } catch { /* permission denied or empty */ }
+          }}
+          className="text-xs font-bold bg-stone-100 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-stone-700 dark:text-stone-300 px-3 py-1.5 rounded-lg hover:bg-stone-200 dark:hover:bg-stone-700 transition-colors"
+          title="Share clipboard"
+          aria-label="Share clipboard"
+        >
+          📋
+        </button>
         <button
           onClick={() => fileRef.current?.click()}
           className="text-xs font-bold bg-stone-900 dark:bg-stone-100 dark:text-stone-900 text-white px-3 py-1.5 rounded-lg hover:bg-stone-700 dark:hover:bg-stone-300 transition-colors"
         >
           + File
         </button>
-        <input ref={fileRef} type="file" multiple className="hidden"
-          onChange={(e) => { const f = Array.from(e.target.files ?? []); if (f.length) onSendFiles(f); }}
-        />
       </div>
 
       {/* Activity feed: messages + transfers */}
