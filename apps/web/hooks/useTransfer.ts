@@ -91,7 +91,13 @@ export function useTransfer() {
         }
 
         channel.send(JSON.stringify({ type: 'TRANSFER_DONE', id, sha256 }));
-        setOutgoing(m => { const n = new Map(m); n.set(id, { ...n.get(id)!, status: 'done' }); return n; });
+        setOutgoing(m => {
+          const n = new Map(m);
+          const prev = n.get(id);
+          if (prev?.previewUrl) setTimeout(() => URL.revokeObjectURL(prev.previewUrl!), 60_000);
+          n.set(id, { ...prev!, status: 'done' });
+          return n;
+        });
         resolve();
       };
       channel.addEventListener('message', acceptHandler);
@@ -166,6 +172,7 @@ export function useTransfer() {
             a.href = url; a.download = transfer.name; a.click();
             setTimeout(() => URL.revokeObjectURL(url), 60_000);
             const previewUrl = transfer.mimeType.startsWith('image/') ? URL.createObjectURL(blob) : undefined;
+            if (previewUrl) setTimeout(() => URL.revokeObjectURL(previewUrl), 60_000);
             setIncomingWithRef(m => { const n = new Map(m); n.set(msg.id, { ...n.get(msg.id)!, status: 'done', previewUrl }); return n; });
             assemblers.current.delete(msg.id);
           } catch {

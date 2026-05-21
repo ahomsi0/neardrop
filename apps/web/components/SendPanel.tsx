@@ -134,16 +134,18 @@ export function SendPanel({ peer, messages, onSendFiles, onSendText, outgoing, i
                 <TransferProgress transfer={t} />
                 {t.previewUrl && (
                   <img src={t.previewUrl} alt={t.name}
-                    className="mt-1 max-h-48 rounded-xl object-cover border border-stone-200 dark:border-stone-700 w-full" />
+                    className="mt-1 max-h-48 rounded-xl object-contain border border-stone-200 dark:border-stone-700 w-full"
+                    onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
                 )}
               </div>
             ))}
             {incoming.map(t => (
               <div key={t.id}>
                 <TransferProgress transfer={t} />
-                {t.previewUrl && t.status === 'done' && (
+                {t.previewUrl && (
                   <img src={t.previewUrl} alt={t.name}
-                    className="mt-1 max-h-48 rounded-xl object-cover border border-stone-200 dark:border-stone-700 w-full" />
+                    className="mt-1 max-h-48 rounded-xl object-contain border border-stone-200 dark:border-stone-700 w-full"
+                    onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
                 )}
               </div>
             ))}
