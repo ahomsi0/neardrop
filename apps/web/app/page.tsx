@@ -38,7 +38,7 @@ export default function HomePage() {
   const { outgoing, sendFile, sendText, acceptTransfer, rejectTransfer, handleChannelMessage } =
     useTransfer();
 
-  const { joinRoom, sendSignal, leaveRoom } = useSignaling({
+  const { joinRoom, sendSignal, leaveRoom, signalingStatus } = useSignaling({
     onRoomJoined: ({ roomCode: code, peers: existingPeers }) => {
       setRoomJoined(code, existingPeers);
       existingPeers.forEach(p => initiateConnection(p));
@@ -50,7 +50,7 @@ export default function HomePage() {
     onSignal: ({ from, type, payload }) => handleSignal(from, type, payload),
   });
 
-  const { initiateConnection, handleSignal, getChannel } = useWebRTC({
+  const { initiateConnection, handleSignal, getChannel, getConnection, peerStates } = useWebRTC({
     onChannel: (peerId, channel) => {
       channel.onmessage = (e) =>
         handleChannelMessage(
@@ -123,6 +123,8 @@ export default function HomePage() {
         selectedPeerId={selectedPeer?.id ?? null}
         roomCode={roomCode}
         unreadPeerIds={unread}
+        signalingStatus={signalingStatus}
+        peerStates={peerStates}
         onSelectPeer={(p) => { setSelectedPeer(p); setUnread(u => { const n = new Set(u); n.delete(p.id); return n; }); }}
         onNewRoom={() => setQrOpen(true)}
         onJoinRoom={() => setJoinOpen(true)}

@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 import type {
   ClientToServerEvents, ServerToClientEvents,
@@ -7,6 +7,7 @@ import type {
 } from '@neardrop/shared';
 
 export type SignalingSocket = Socket<ServerToClientEvents, ClientToServerEvents>;
+export type SignalingStatus = 'connecting' | 'connected' | 'disconnected';
 
 export interface SignalingHandlers {
   onRoomJoined: (payload: { roomCode: string; peers: Peer[] }) => void;
@@ -22,6 +23,7 @@ export function useSignaling(handlers: SignalingHandlers) {
   const socketRef = useRef<SignalingSocket | null>(null);
   const handlersRef = useRef(handlers);
   handlersRef.current = handlers;
+  const [signalingStatus, setSignalingStatus] = useState<SignalingStatus>('connecting');
 
   useEffect(() => {
     const socket: SignalingSocket = io(SIGNALING_URL, {
@@ -33,6 +35,12 @@ export function useSignaling(handlers: SignalingHandlers) {
     });
 
     socketRef.current = socket;
+
+    socket.on('connect',       () => setSignalingStatus('connected'));
+    socket.on('disconnect',    () => setSignalingStatus('disconnected'));
+    socket.on('connect_error', () => setSignalingStatus('disconnected'));
+    socket.io.on('reconnect_attempt', () => setSignalingStatus('connecting'));
+    socket.io.on('reconnect',         () => setSignalingStatus('connected'));
 
     socket.on('room-joined', (p) => handlersRef.current.onRoomJoined(p));
     socket.on('peer-joined', (p) => handlersRef.current.onPeerJoined(p));
@@ -55,5 +63,5 @@ export function useSignaling(handlers: SignalingHandlers) {
     socketRef.current?.emit('leave-room');
   }, []);
 
-  return { joinRoom, sendSignal, leaveRoom };
+  return { joinRoom, sendSignal, leaveRoom, signalingStatus };
 }

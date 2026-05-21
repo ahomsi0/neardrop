@@ -1,5 +1,5 @@
 'use client';
-import { useRef, useCallback, useEffect } from 'react';
+import { useRef, useCallback, useEffect, useState } from 'react';
 import type { Peer } from '@neardrop/shared';
 
 const ICE_SERVERS: RTCIceServer[] = [
@@ -15,6 +15,7 @@ const ICE_SERVERS: RTCIceServer[] = [
 export interface WebRTCHandlers {
   onChannel: (peerId: string, channel: RTCDataChannel) => void;
   onSendSignal: (to: string, type: 'offer' | 'answer' | 'ice', payload: unknown) => void;
+  onConnectionChange?: (peerId: string, state: RTCPeerConnectionState) => void;
 }
 
 export function useWebRTC(handlers: WebRTCHandlers) {
@@ -22,6 +23,8 @@ export function useWebRTC(handlers: WebRTCHandlers) {
   const channels    = useRef<Map<string, RTCDataChannel>>(new Map());
   const handlersRef = useRef(handlers);
   handlersRef.current = handlers;
+  const connStateMap = useRef<Map<string, RTCPeerConnectionState>>(new Map());
+  const [peerStates, setPeerStates] = useState<Map<string, RTCPeerConnectionState>>(new Map());
 
   useEffect(() => {
     return () => {
@@ -53,15 +56,15 @@ export function useWebRTC(handlers: WebRTCHandlers) {
     };
 
     pc.onconnectionstatechange = () => {
-      if (pc.connectionState === 'failed') {
-        closeConnection(peerId);
-      }
+      connStateMap.current.set(peerId, pc.connectionState);
+      setPeerStates(new Map(connStateMap.current));
+      handlersRef.current.onConnectionChange?.(peerId, pc.connectionState);
+      if (pc.connectionState === 'failed') closeConnection(peerId);
     };
 
     if (isInitiator) {
       const channel = pc.createDataChannel('transfer', { ordered: true });
       setupChannel(peerId, channel);
-
       pc.createOffer()
         .then((offer) => pc.setLocalDescription(offer))
         .then(() => {
@@ -82,7 +85,6 @@ export function useWebRTC(handlers: WebRTCHandlers) {
     payload: unknown
   ) => {
     let pc = connections.current.get(from);
-
     if (type === 'offer') {
       pc = createConnection(from, false);
       await pc.setRemoteDescription(payload as RTCSessionDescriptionInit);
@@ -103,6 +105,7 @@ export function useWebRTC(handlers: WebRTCHandlers) {
   }, [createConnection]);
 
   const getChannel = useCallback((peerId: string) => channels.current.get(peerId), []);
+  const getConnection = useCallback((peerId: string) => connections.current.get(peerId), []);
 
-  return { initiateConnection, handleSignal, closeConnection, getChannel };
+  return { initiateConnection, handleSignal, closeConnection, getChannel, getConnection, peerStates };
 }

@@ -1,5 +1,6 @@
 import type { Peer } from '@neardrop/shared';
 import { Button } from '@/components/ui/button';
+import type { SignalingStatus } from '@/hooks/useSignaling';
 
 interface Props {
   me: Peer;
@@ -7,24 +8,44 @@ interface Props {
   selectedPeerId: string | null;
   roomCode: string | null;
   unreadPeerIds: Set<string>;
+  signalingStatus: SignalingStatus;
+  peerStates: Map<string, RTCPeerConnectionState>;
   onSelectPeer: (peer: Peer) => void;
   onNewRoom: () => void;
   onJoinRoom: () => void;
 }
 
-// Last 4 chars of the peer's UUID as a short disambiguator
 function shortId(id: string) {
   return id.slice(-4).toUpperCase();
 }
 
-export function DesktopSidebar({ me, peers, selectedPeerId, unreadPeerIds, onSelectPeer, onNewRoom, onJoinRoom }: Props) {
+function StatusDot({ status }: { status: SignalingStatus }) {
+  const colors: Record<SignalingStatus, string> = {
+    connected:    'bg-green-500',
+    connecting:   'bg-yellow-400 animate-pulse',
+    disconnected: 'bg-red-500',
+  };
+  const labels: Record<SignalingStatus, string> = {
+    connected:    'Connected',
+    connecting:   'Reconnecting…',
+    disconnected: 'Offline',
+  };
+  return (
+    <span title={labels[status]} className={`w-2 h-2 rounded-full inline-block shrink-0 ${colors[status]}`} />
+  );
+}
+
+export function DesktopSidebar({ me, peers, selectedPeerId, unreadPeerIds, signalingStatus, peerStates, onSelectPeer, onNewRoom, onJoinRoom }: Props) {
   const activePeer = peers.find(p => p.id === selectedPeerId) ?? null;
 
   return (
     <aside className="hidden md:flex w-60 flex-col bg-stone-100 border-r border-stone-200 shrink-0">
       {/* App header */}
       <div className="p-4 pb-3 border-b border-stone-200">
-        <h1 className="text-lg font-extrabold text-stone-900 tracking-tight">NearDrop</h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-lg font-extrabold text-stone-900 tracking-tight">NearDrop</h1>
+          <StatusDot status={signalingStatus} />
+        </div>
       </div>
 
       {/* Your identity */}
@@ -52,7 +73,6 @@ export function DesktopSidebar({ me, peers, selectedPeerId, unreadPeerIds, onSel
         <div className="px-3 py-3 border-b border-stone-200 bg-stone-50">
           <p className="text-[9px] font-bold text-stone-400 uppercase tracking-widest mb-2">Room</p>
           <div className="bg-white rounded-xl border border-stone-200 px-3 py-2.5 space-y-2">
-            {/* Me */}
             <div className="flex items-center gap-2">
               <span className="text-sm">{me.emoji}</span>
               <div className="min-w-0">
@@ -62,9 +82,7 @@ export function DesktopSidebar({ me, peers, selectedPeerId, unreadPeerIds, onSel
                 </div>
               </div>
             </div>
-            {/* Divider */}
             <div className="border-t border-stone-100" />
-            {/* Peer */}
             <div className="flex items-center gap-2">
               <span className="text-sm">{activePeer.emoji}</span>
               <div className="min-w-0">
@@ -87,33 +105,37 @@ export function DesktopSidebar({ me, peers, selectedPeerId, unreadPeerIds, onSel
           </p>
         ) : (
           <div className="space-y-1">
-            {peers.map(p => (
-              <button
-                key={p.id}
-                onClick={() => onSelectPeer(p)}
-                className={[
-                  'w-full flex items-center gap-2 px-2 py-2 rounded-xl text-left transition-colors',
-                  p.id === selectedPeerId
-                    ? 'bg-white border border-stone-900 shadow-sm'
-                    : 'bg-white border border-stone-200 hover:border-stone-300',
-                ].join(' ')}
-              >
-                <span className="text-base">{p.emoji}</span>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-baseline gap-1.5">
-                    <p className="text-xs font-bold text-stone-900 truncate">{p.displayName}</p>
-                    <span className="text-[9px] font-mono text-stone-400 shrink-0">#{shortId(p.id)}</span>
+            {peers.map(p => {
+              const connState = peerStates.get(p.id);
+              const isConnected = connState === 'connected';
+              return (
+                <button
+                  key={p.id}
+                  onClick={() => onSelectPeer(p)}
+                  className={[
+                    'w-full flex items-center gap-2 px-2 py-2 rounded-xl text-left transition-colors',
+                    p.id === selectedPeerId
+                      ? 'bg-white border border-stone-900 shadow-sm'
+                      : 'bg-white border border-stone-200 hover:border-stone-300',
+                  ].join(' ')}
+                >
+                  <span className="text-base">{p.emoji}</span>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-baseline gap-1.5">
+                      <p className="text-xs font-bold text-stone-900 truncate">{p.displayName}</p>
+                      <span className="text-[9px] font-mono text-stone-400 shrink-0">#{shortId(p.id)}</span>
+                    </div>
+                    <p className={`text-[10px] flex items-center gap-1 ${isConnected ? 'text-green-600' : 'text-yellow-600'}`}>
+                      <span className={`w-1 h-1 rounded-full inline-block ${isConnected ? 'bg-green-500' : 'bg-yellow-400'}`} />
+                      {connState ?? 'connecting…'}
+                    </p>
                   </div>
-                  <p className="text-[10px] text-green-600 flex items-center gap-1">
-                    <span className="w-1 h-1 bg-green-500 rounded-full inline-block" />
-                    connected
-                  </p>
-                </div>
-                {unreadPeerIds.has(p.id) && (
-                  <span className="w-2 h-2 bg-blue-500 rounded-full shrink-0" />
-                )}
-              </button>
-            ))}
+                  {unreadPeerIds.has(p.id) && (
+                    <span className="w-2 h-2 bg-blue-500 rounded-full shrink-0" />
+                  )}
+                </button>
+              );
+            })}
           </div>
         )}
       </div>
