@@ -7,6 +7,7 @@ export interface JoinRoomPayload {
   emoji: string;
   deviceType: 'mobile' | 'desktop';
   passwordHash?: string;  // SHA-256 hex of the room password, if set
+  roomName?: string;  // optional human-readable room name
 }
 
 export interface SignalPayload {

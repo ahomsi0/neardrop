@@ -25,6 +25,7 @@ import { requestNotificationPermission, notifyReceived } from '@/lib/notify';
 import { formatBytes } from '@/lib/fileIcons';
 
 const NAME_SET_KEY = 'neardrop-name-set';
+const MY_ROOM_KEY = 'neardrop-my-room';
 
 export default function HomePage() {
   const [identity, setIdentity] = useState(getOrCreateIdentity);
@@ -47,6 +48,9 @@ export default function HomePage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [unread, setUnread] = useState<Set<string>>(new Set());
   const [history, setHistory] = useState<HistoryEntry[]>(loadHistory);
+  const [myRoomCode, setMyRoomCode] = useState<string | null>(() => {
+    try { return localStorage.getItem(MY_ROOM_KEY); } catch { return null; }
+  });
 
   const { outgoing, incoming, sendFile, sendText, acceptTransfer, rejectTransfer, handleChannelMessage } =
     useTransfer();
@@ -225,6 +229,17 @@ export default function HomePage() {
         onJoinRoom={() => setJoinOpen(true)}
         dark={dark}
         onToggleDark={toggleDark}
+        myRoomCode={myRoomCode}
+        currentRoomCode={roomCode}
+        onJoinMyRoom={() => {
+          if (!myRoomCode || !identity) return;
+          joinRoom({ roomCode: myRoomCode, displayName: identity.displayName, emoji: identity.emoji, deviceType: identity.deviceType });
+        }}
+        onSaveAsMyRoom={() => {
+          if (!roomCode) return;
+          try { localStorage.setItem(MY_ROOM_KEY, roomCode); } catch { /* ignore */ }
+          setMyRoomCode(roomCode);
+        }}
       />
 
       <main className="flex-1 flex flex-col overflow-hidden bg-stone-50 dark:bg-stone-950">

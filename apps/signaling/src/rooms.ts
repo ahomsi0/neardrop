@@ -7,6 +7,7 @@ interface RoomEntry {
   peers: Map<string, Peer>;
   lastActivity: number;
   passwordHash?: string;
+  roomName?: string;
 }
 
 export class RoomManager {
@@ -18,12 +19,16 @@ export class RoomManager {
     this.timer = setInterval(() => this.cleanup(), 5 * 60 * 1000);
   }
 
-  createRoom(code?: string, passwordHash?: string): string {
+  createRoom(code?: string, passwordHash?: string, roomName?: string): string {
     const roomCode = code ?? nanoid();
     if (!this.rooms.has(roomCode)) {
-      this.rooms.set(roomCode, { peers: new Map(), lastActivity: Date.now(), passwordHash });
+      this.rooms.set(roomCode, { peers: new Map(), lastActivity: Date.now(), passwordHash, roomName });
     }
     return roomCode;
+  }
+
+  getRoomName(code: string): string | undefined {
+    return this.rooms.get(code)?.roomName;
   }
 
   getOrCreateIpRoom(ip: string): string {

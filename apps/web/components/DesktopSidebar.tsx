@@ -18,6 +18,10 @@ interface Props {
   onJoinRoom: () => void;
   dark: boolean;
   onToggleDark: () => void;
+  myRoomCode: string | null;
+  currentRoomCode: string | null;
+  onJoinMyRoom: () => void;
+  onSaveAsMyRoom: () => void;
 }
 
 function shortId(id: string) {
@@ -72,7 +76,7 @@ export function PeerAvatar({ peer, size = 'md' }: { peer: { id: string; emoji: s
   );
 }
 
-export function DesktopSidebar({ me, peers, selectedPeerId, unreadPeerIds, signalingStatus, peerStates, peerQuality, broadcastSelected, onBroadcastSelect, onSelectPeer, onNewRoom, onJoinRoom, dark, onToggleDark }: Props) {
+export function DesktopSidebar({ me, peers, selectedPeerId, unreadPeerIds, signalingStatus, peerStates, peerQuality, broadcastSelected, onBroadcastSelect, onSelectPeer, onNewRoom, onJoinRoom, dark, onToggleDark, myRoomCode, currentRoomCode, onJoinMyRoom, onSaveAsMyRoom }: Props) {
   const activePeer = peers.find(p => p.id === selectedPeerId) ?? null;
 
   return (
@@ -140,6 +144,30 @@ export function DesktopSidebar({ me, peers, selectedPeerId, unreadPeerIds, signa
       {/* Nearby devices */}
       <div className="flex-1 overflow-y-auto px-3 py-3">
         <p className="text-[9px] font-bold text-stone-400 uppercase tracking-widest mb-2 dark:text-stone-500">Nearby</p>
+        {/* My Room shortcut */}
+        {(myRoomCode || currentRoomCode) && (
+          <div className="mb-2">
+            {myRoomCode && myRoomCode !== currentRoomCode && (
+              <button
+                onClick={onJoinMyRoom}
+                className="w-full flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-[10px] font-bold text-stone-500 dark:text-stone-400 hover:bg-stone-200 dark:hover:bg-stone-700 transition-colors"
+              >
+                🏠 Rejoin My Room ({myRoomCode})
+              </button>
+            )}
+            {currentRoomCode && currentRoomCode !== myRoomCode && (
+              <button
+                onClick={onSaveAsMyRoom}
+                className="w-full flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-[10px] font-bold text-stone-500 dark:text-stone-400 hover:bg-stone-200 dark:hover:bg-stone-700 transition-colors"
+              >
+                💾 Save as My Room
+              </button>
+            )}
+            {currentRoomCode && currentRoomCode === myRoomCode && (
+              <p className="text-[10px] text-stone-400 dark:text-stone-500 px-2 py-1">🏠 My Room ({myRoomCode})</p>
+            )}
+          </div>
+        )}
         {peers.length === 0 ? (
           <p className="text-[11px] text-stone-400 leading-relaxed dark:text-stone-500">
             No devices found yet. Open NearDrop on another device on the same network.
