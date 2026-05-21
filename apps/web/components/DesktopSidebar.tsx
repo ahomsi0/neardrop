@@ -12,9 +12,16 @@ interface Props {
   onJoinRoom: () => void;
 }
 
+// Last 4 chars of the peer's UUID as a short disambiguator
+function shortId(id: string) {
+  return id.slice(-4).toUpperCase();
+}
+
 export function DesktopSidebar({ me, peers, selectedPeerId, unreadPeerIds, onSelectPeer, onNewRoom, onJoinRoom }: Props) {
+  const activePeer = peers.find(p => p.id === selectedPeerId) ?? null;
+
   return (
-    <aside className="hidden md:flex w-56 flex-col bg-stone-100 border-r border-stone-200 shrink-0">
+    <aside className="hidden md:flex w-60 flex-col bg-stone-100 border-r border-stone-200 shrink-0">
       {/* App header */}
       <div className="p-4 pb-3 border-b border-stone-200">
         <h1 className="text-lg font-extrabold text-stone-900 tracking-tight">NearDrop</h1>
@@ -28,7 +35,10 @@ export function DesktopSidebar({ me, peers, selectedPeerId, unreadPeerIds, onSel
             {me.emoji}
           </div>
           <div className="min-w-0">
-            <p className="text-xs font-bold text-stone-900 truncate">{me.displayName}</p>
+            <div className="flex items-baseline gap-1.5">
+              <p className="text-xs font-bold text-stone-900 truncate">{me.displayName}</p>
+              <span className="text-[9px] font-mono text-stone-400 shrink-0">#{shortId(me.id)}</span>
+            </div>
             <p className="text-[10px] text-green-600 flex items-center gap-1">
               <span className="w-1.5 h-1.5 bg-green-500 rounded-full inline-block" />
               online
@@ -36,6 +46,37 @@ export function DesktopSidebar({ me, peers, selectedPeerId, unreadPeerIds, onSel
           </div>
         </div>
       </div>
+
+      {/* Active room */}
+      {activePeer && (
+        <div className="px-3 py-3 border-b border-stone-200 bg-stone-50">
+          <p className="text-[9px] font-bold text-stone-400 uppercase tracking-widest mb-2">Room</p>
+          <div className="bg-white rounded-xl border border-stone-200 px-3 py-2.5 space-y-2">
+            {/* Me */}
+            <div className="flex items-center gap-2">
+              <span className="text-sm">{me.emoji}</span>
+              <div className="min-w-0">
+                <div className="flex items-baseline gap-1">
+                  <p className="text-[11px] font-bold text-stone-900 truncate">{me.displayName}</p>
+                  <span className="text-[9px] font-mono text-stone-400">#{shortId(me.id)}</span>
+                </div>
+              </div>
+            </div>
+            {/* Divider */}
+            <div className="border-t border-stone-100" />
+            {/* Peer */}
+            <div className="flex items-center gap-2">
+              <span className="text-sm">{activePeer.emoji}</span>
+              <div className="min-w-0">
+                <div className="flex items-baseline gap-1">
+                  <p className="text-[11px] font-bold text-stone-900 truncate">{activePeer.displayName}</p>
+                  <span className="text-[9px] font-mono text-stone-400">#{shortId(activePeer.id)}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Nearby devices */}
       <div className="flex-1 overflow-y-auto px-3 py-3">
@@ -59,14 +100,17 @@ export function DesktopSidebar({ me, peers, selectedPeerId, unreadPeerIds, onSel
               >
                 <span className="text-base">{p.emoji}</span>
                 <div className="min-w-0 flex-1">
-                  <p className="text-xs font-bold text-stone-900 truncate">{p.displayName}</p>
+                  <div className="flex items-baseline gap-1.5">
+                    <p className="text-xs font-bold text-stone-900 truncate">{p.displayName}</p>
+                    <span className="text-[9px] font-mono text-stone-400 shrink-0">#{shortId(p.id)}</span>
+                  </div>
                   <p className="text-[10px] text-green-600 flex items-center gap-1">
                     <span className="w-1 h-1 bg-green-500 rounded-full inline-block" />
                     connected
                   </p>
                 </div>
                 {unreadPeerIds.has(p.id) && (
-                  <span className="w-2 h-2 bg-stone-900 rounded-full shrink-0" />
+                  <span className="w-2 h-2 bg-blue-500 rounded-full shrink-0" />
                 )}
               </button>
             ))}
