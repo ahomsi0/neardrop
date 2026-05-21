@@ -12,9 +12,13 @@ const HISTORY_KEY = 'neardrop-history';
 
 export function loadHistory(): HistoryEntry[] {
   if (typeof window === 'undefined') return [];
-  try { return JSON.parse(sessionStorage.getItem(HISTORY_KEY) ?? '[]'); } catch { return []; }
+  try { return JSON.parse(localStorage.getItem(HISTORY_KEY) ?? '[]'); } catch { return []; }
 }
 
 export function saveHistory(entries: HistoryEntry[]) {
-  try { sessionStorage.setItem(HISTORY_KEY, JSON.stringify(entries.slice(-200))); } catch { /* ignore */ }
+  try { localStorage.setItem(HISTORY_KEY, JSON.stringify(entries.slice(-200))); } catch { /* ignore */ }
+}
+
+export function clearHistory() {
+  try { localStorage.removeItem(HISTORY_KEY); } catch { /* ignore */ }
 }

@@ -219,6 +219,7 @@ export default function HomePage() {
               outgoing={Array.from(outgoing.values()).filter(t => t.peerId === selectedPeer.id)}
               incoming={Array.from(incoming.values()).filter(t => t.peerId === selectedPeer.id)}
               history={history.filter(h => h.peerId === selectedPeer.id)}
+              onClearHistory={() => setHistory([])}
             />
           ) : (
             <div className="flex-1 flex flex-col items-center justify-center text-stone-300 dark:text-stone-700">
@@ -238,6 +239,7 @@ export default function HomePage() {
         incoming={Array.from(incoming.values())}
         messages={messages}
         history={history}
+        onClearHistory={() => setHistory([])}
       />
 
       <IncomingAlert

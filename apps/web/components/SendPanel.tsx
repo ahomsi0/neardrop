@@ -6,6 +6,7 @@ import type { OutgoingTransfer, IncomingTransfer } from '@/hooks/useTransfer';
 import { TransferProgress } from './TransferProgress';
 import { PeerAvatar } from './DesktopSidebar';
 import type { HistoryEntry } from '@/lib/history';
+import { clearHistory } from '@/lib/history';
 
 export interface Message {
   id: string;
@@ -23,13 +24,14 @@ interface Props {
   outgoing: OutgoingTransfer[];
   incoming: IncomingTransfer[];
   history: HistoryEntry[];
+  onClearHistory: () => void;
 }
 
 function fmt(ts: number) {
   return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
-export function SendPanel({ peer, messages, onSendFiles, onSendText, outgoing, incoming, history }: Props) {
+export function SendPanel({ peer, messages, onSendFiles, onSendText, outgoing, incoming, history, onClearHistory }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const fileRef  = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -153,13 +155,22 @@ export function SendPanel({ peer, messages, onSendFiles, onSendText, outgoing, i
             {/* Transfer history */}
             {history.length > 0 && (
               <div className="border border-stone-200 dark:border-stone-700 rounded-xl overflow-hidden">
-                <button
-                  onClick={() => setHistoryOpen(o => !o)}
-                  className="w-full flex items-center justify-between px-3 py-2 text-[11px] font-bold text-stone-500 dark:text-stone-400 bg-stone-50 dark:bg-stone-800 hover:bg-stone-100 dark:hover:bg-stone-700"
-                >
-                  <span>History ({history.length})</span>
-                  <span>{historyOpen ? '▲' : '▼'}</span>
-                </button>
+                <div className="w-full flex items-center">
+                  <button
+                    onClick={() => setHistoryOpen(o => !o)}
+                    className="flex-1 flex items-center justify-between px-3 py-2 text-[11px] font-bold text-stone-500 dark:text-stone-400 bg-stone-50 dark:bg-stone-800 hover:bg-stone-100 dark:hover:bg-stone-700"
+                  >
+                    <span>History ({history.length})</span>
+                    <span>{historyOpen ? '▲' : '▼'}</span>
+                  </button>
+                  <button
+                    onClick={() => { clearHistory(); onClearHistory(); }}
+                    className="px-2 py-2 text-[10px] text-stone-400 hover:text-red-500 transition-colors bg-stone-50 dark:bg-stone-800 border-l border-stone-200 dark:border-stone-700"
+                    title="Clear history"
+                  >
+                    ✕
+                  </button>
+                </div>
                 {historyOpen && (
                   <div className="divide-y divide-stone-100 dark:divide-stone-800 max-h-48 overflow-y-auto bg-white dark:bg-stone-900">
                     {[...history].reverse().map(h => (

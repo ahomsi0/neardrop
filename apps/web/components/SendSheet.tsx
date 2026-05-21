@@ -14,9 +14,10 @@ interface Props {
   incoming: IncomingTransfer[];
   messages: Message[];
   history: HistoryEntry[];
+  onClearHistory: () => void;
 }
 
-export function SendSheet({ peer, open, onClose, onSendFiles, onSendText, outgoing, incoming, messages, history }: Props) {
+export function SendSheet({ peer, open, onClose, onSendFiles, onSendText, outgoing, incoming, messages, history, onClearHistory }: Props) {
   return (
     <Sheet open={open} onOpenChange={(o) => !o && onClose()}>
       <SheetContent side="bottom" className="rounded-t-2xl h-[90dvh] bg-stone-50 p-0">
@@ -31,6 +32,7 @@ export function SendSheet({ peer, open, onClose, onSendFiles, onSendText, outgoi
               outgoing={outgoing.filter(t => t.peerId === peer.id)}
               incoming={incoming.filter(t => t.peerId === peer.id)}
               history={history.filter(h => h.peerId === peer.id)}
+              onClearHistory={onClearHistory}
             />
           )}
         </div>
