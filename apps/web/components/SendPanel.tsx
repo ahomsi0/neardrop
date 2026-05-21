@@ -167,6 +167,7 @@ export function SendPanel({ peer, messages, onSendFiles, onSendText, outgoing, i
                     onClick={() => { clearHistory(); onClearHistory(); }}
                     className="px-2 py-2 text-[10px] text-stone-400 hover:text-red-500 transition-colors bg-stone-50 dark:bg-stone-800 border-l border-stone-200 dark:border-stone-700"
                     title="Clear history"
+                    aria-label="Clear history"
                   >
                     ✕
                   </button>

@@ -16,9 +16,11 @@ export function loadHistory(): HistoryEntry[] {
 }
 
 export function saveHistory(entries: HistoryEntry[]) {
+  if (typeof window === 'undefined') return;
   try { localStorage.setItem(HISTORY_KEY, JSON.stringify(entries.slice(-200))); } catch { /* ignore */ }
 }
 
 export function clearHistory() {
+  if (typeof window === 'undefined') return;
   try { localStorage.removeItem(HISTORY_KEY); } catch { /* ignore */ }
 }
