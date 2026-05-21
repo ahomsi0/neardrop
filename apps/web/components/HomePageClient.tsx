@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { nanoid } from 'nanoid';
 import type { Peer } from '@neardrop/shared';
 import { getOrCreateIdentity, updateIdentity } from '@/lib/deviceName';
@@ -34,6 +34,8 @@ export default function HomePage() {
 
   const { dark, toggle: toggleDark } = useDarkMode();
   const { peers, roomCode, setRoomJoined, addPeer, removePeer } = usePeers();
+  const peersRef = useRef(peers);
+  useEffect(() => { peersRef.current = peers; }, [peers]);
   const [selectedPeer, setSelectedPeer] = useState<Peer | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [qrOpen, setQrOpen] = useState(false);
@@ -68,7 +70,7 @@ export default function HomePage() {
           peerId, e,
           (content) => {
             playReceive();
-            const senderName = peers.find(p => p.id === peerId)?.displayName ?? 'Someone';
+            const senderName = peersRef.current.find(p => p.id === peerId)?.displayName ?? 'Someone';
             notifyReceived('NearDrop', `${senderName}: ${content.slice(0, 60)}`);
             setMessages(m => [...m, {
               id: nanoid(), peerId, content, direction: 'received', timestamp: Date.now(),
@@ -77,7 +79,7 @@ export default function HomePage() {
           },
           (t) => {
             playReceive();
-            const senderName = peers.find(p => p.id === t.peerId)?.displayName ?? 'Someone';
+            const senderName = peersRef.current.find(p => p.id === t.peerId)?.displayName ?? 'Someone';
             notifyReceived('NearDrop', `${senderName} wants to send ${t.name} (${formatBytes(t.size)})`);
             setPendingTransfer(t);
           },
