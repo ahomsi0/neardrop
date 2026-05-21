@@ -81,7 +81,7 @@ export function SendPanel({ peer, messages, onSendFiles, onSendText, outgoing, h
 
       {/* Activity feed: messages + transfers */}
       <div
-        className="flex-1 overflow-y-auto"
+        className="flex-1 overflow-y-auto flex flex-col"
         onDrop={handleDrop}
         onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
         onDragLeave={() => setIsDragging(false)}
@@ -89,7 +89,7 @@ export function SendPanel({ peer, messages, onSendFiles, onSendText, outgoing, h
         {!hasActivity && (
           <div
             className={[
-              'h-full border-2 border-dashed rounded-2xl flex flex-col items-center justify-center',
+              'flex-1 border-2 border-dashed rounded-2xl flex flex-col items-center justify-center',
               'cursor-pointer transition-colors duration-150',
               isDragging
                 ? 'border-stone-900 bg-stone-50 dark:border-stone-400 dark:bg-stone-800'
@@ -104,7 +104,7 @@ export function SendPanel({ peer, messages, onSendFiles, onSendText, outgoing, h
         )}
 
         {hasActivity && (
-          <div className="flex flex-col gap-2 pb-2">
+          <div className="mt-auto flex flex-col gap-2 pb-2">
             {outgoing.map(t => <TransferProgress key={t.id} transfer={t} />)}
 
             {/* Transfer history */}
