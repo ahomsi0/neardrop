@@ -144,7 +144,8 @@ export function DesktopSidebar({ me, peers, selectedPeerId, unreadPeerIds, signa
 
       {/* Nearby devices */}
       <div className="flex-1 overflow-y-auto px-3 py-3">
-        <p className="text-[9px] font-bold text-stone-400 uppercase tracking-widest mb-2 dark:text-stone-500">Nearby</p>
+        <p className="text-[9px] font-bold text-stone-400 uppercase tracking-widest mb-1 dark:text-stone-500">Nearby</p>
+        <p className="text-[9px] text-stone-400 dark:text-stone-600 mb-2">Devices on the same Wi-Fi appear here automatically</p>
         {/* My Room shortcut */}
         {(myRoomCode || currentRoomCode) && (
           <div className="mb-2">
@@ -245,15 +246,24 @@ export function DesktopSidebar({ me, peers, selectedPeerId, unreadPeerIds, signa
       </div>
 
       {/* Actions */}
-      <div className="p-3 border-t border-stone-200 grid grid-cols-2 gap-1.5 dark:border-stone-800">
-        <Button size="sm" onClick={onNewRoom}
-          className="bg-stone-900 text-white hover:bg-stone-700 rounded-lg text-[10px] h-8 dark:bg-stone-100 dark:text-stone-900 dark:hover:bg-stone-300">
-          Invite
-        </Button>
-        <Button size="sm" variant="outline" onClick={onJoinRoom}
-          className="border-stone-200 text-stone-900 rounded-lg text-[10px] h-8 dark:border-stone-700 dark:text-stone-100">
-          Join
-        </Button>
+      <div className="p-3 border-t border-stone-200 space-y-1.5 dark:border-stone-800">
+        <p className="text-[9px] text-stone-400 dark:text-stone-600 px-0.5">Not on the same Wi-Fi?</p>
+        <div className="grid grid-cols-2 gap-1.5">
+          <div className="flex flex-col gap-0.5">
+            <Button size="sm" onClick={onNewRoom}
+              className="bg-stone-900 text-white hover:bg-stone-700 rounded-lg text-[10px] h-8 dark:bg-stone-100 dark:text-stone-900 dark:hover:bg-stone-300">
+              Invite
+            </Button>
+            <p className="text-[8px] text-stone-400 dark:text-stone-600 text-center leading-tight">Share a link or QR code</p>
+          </div>
+          <div className="flex flex-col gap-0.5">
+            <Button size="sm" variant="outline" onClick={onJoinRoom}
+              className="border-stone-200 text-stone-900 rounded-lg text-[10px] h-8 dark:border-stone-700 dark:text-stone-100">
+              Join
+            </Button>
+            <p className="text-[8px] text-stone-400 dark:text-stone-600 text-center leading-tight">Enter a room code</p>
+          </div>
+        </div>
       </div>
     </aside>
   );

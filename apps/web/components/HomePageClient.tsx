@@ -266,11 +266,13 @@ export default function HomePage() {
           <h1 className="text-base font-extrabold text-stone-900 dark:text-stone-100">NearDrop</h1>
           <div className="flex gap-2">
             <button onClick={() => setQrOpen(true)}
-              className="text-xs font-bold bg-stone-900 dark:bg-stone-100 dark:text-stone-900 text-white px-3 py-1.5 rounded-lg">
+              className="text-xs font-bold bg-stone-900 dark:bg-stone-100 dark:text-stone-900 text-white px-3 py-1.5 rounded-lg"
+              title="Share a link or QR code so someone on a different network can join">
               Invite
             </button>
             <button onClick={() => setJoinOpen(true)}
-              className="text-xs font-bold bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-stone-900 dark:text-stone-100 px-3 py-1.5 rounded-lg">
+              className="text-xs font-bold bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-stone-900 dark:text-stone-100 px-3 py-1.5 rounded-lg"
+              title="Enter a room code to join someone on a different network">
               Join
             </button>
           </div>
