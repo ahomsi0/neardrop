@@ -52,7 +52,10 @@ export function useTransfer() {
       name: file.name, size: file.size, mimeType: file.type,
       totalChunks, sha256,
     };
-    const previewUrl = file.type.startsWith('image/') ? URL.createObjectURL(file) : undefined;
+    const isPreviewableOutgoing = file.type.startsWith('image/')
+      || file.type.startsWith('audio/')
+      || file.type.startsWith('video/');
+    const previewUrl = isPreviewableOutgoing ? URL.createObjectURL(file) : undefined;
     channel.send(JSON.stringify(offer));
 
     setOutgoing(m => new Map(m).set(id, {
@@ -94,7 +97,11 @@ export function useTransfer() {
         setOutgoing(m => {
           const n = new Map(m);
           const prev = n.get(id);
-          if (prev?.previewUrl) setTimeout(() => URL.revokeObjectURL(prev.previewUrl!), 60_000);
+          if (prev?.previewUrl) {
+            const revokeDelay = (prev.mimeType?.startsWith('audio/') || prev.mimeType?.startsWith('video/'))
+              ? 600_000 : 60_000;
+            setTimeout(() => URL.revokeObjectURL(prev.previewUrl!), revokeDelay);
+          }
           n.set(id, { ...prev!, status: 'done' });
           return n;
         });

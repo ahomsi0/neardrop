@@ -267,6 +267,24 @@ export function IconFilePresentation({ className = 'w-4 h-4', strokeWidth }: Ico
   );
 }
 
+export function IconMicrophone({ className = 'w-4 h-4', strokeWidth }: IconProps) {
+  return (
+    <svg className={className} {...base(strokeWidth)}>
+      <path d="M12 2a3 3 0 0 1 3 3v7a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3Z" />
+      <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+      <line x1="12" y1="19" x2="12" y2="22" />
+    </svg>
+  );
+}
+
+export function IconStop({ className = 'w-4 h-4', strokeWidth }: IconProps) {
+  return (
+    <svg className={className} {...base(strokeWidth)}>
+      <rect x="4" y="4" width="16" height="16" rx="2" />
+    </svg>
+  );
+}
+
 /* ── FileTypeIcon — maps name/mime to the right icon ─────────── */
 
 export function FileTypeIcon({

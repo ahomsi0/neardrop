@@ -12,7 +12,33 @@ import {
   IconSend, IconClipboard, IconFolder, IconFolderOpen,
   IconChevronUp, IconChevronDown, IconX,
   IconArrowUp, IconArrowDown, IconMessageCircle, IconFile,
+  IconMicrophone, IconStop,
 } from '@/components/icons';
+
+function getSupportedAudioMime(): string {
+  const candidates = [
+    'audio/webm;codecs=opus',
+    'audio/webm',
+    'audio/ogg;codecs=opus',
+    'audio/ogg',
+    'audio/mp4',
+  ];
+  if (typeof MediaRecorder === 'undefined') return '';
+  return candidates.find(t => MediaRecorder.isTypeSupported(t)) ?? '';
+}
+
+function audioExtFromMime(mime: string): string {
+  if (mime.includes('webm')) return 'webm';
+  if (mime.includes('ogg')) return 'ogg';
+  if (mime.includes('mp4')) return 'm4a';
+  return 'audio';
+}
+
+function fmtDuration(secs: number): string {
+  const m = Math.floor(secs / 60);
+  const s = secs % 60;
+  return `${m}:${String(s).padStart(2, '0')}`;
+}
 
 export interface Message {
   id: string;
@@ -75,6 +101,67 @@ export function SendPanel({ peer, messages, onSendFiles, onSendText, outgoing, i
   const [text, setText] = useState('');
   const [isDragging, setIsDragging] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
+
+  // Voice recording state
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef   = useRef<Blob[]>([]);
+  const streamRef        = useRef<MediaStream | null>(null);
+  const timerRef         = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingSecs, setRecordingSecs] = useState(0);
+  const [micError, setMicError] = useState<string | null>(null);
+
+  const stopRecording = useCallback(() => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      mediaRecorderRef.current.stop();
+    }
+    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
+    streamRef.current?.getTracks().forEach(t => t.stop());
+    streamRef.current = null;
+    setIsRecording(false);
+    setRecordingSecs(0);
+  }, []);
+
+  const startRecording = useCallback(async () => {
+    setMicError(null);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
+      const mime = getSupportedAudioMime();
+      const mr = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream);
+      mediaRecorderRef.current = mr;
+      audioChunksRef.current = [];
+
+      mr.ondataavailable = (e) => {
+        if (e.data.size > 0) audioChunksRef.current.push(e.data);
+      };
+
+      mr.onstop = () => {
+        const chunks = audioChunksRef.current;
+        if (!chunks.length) return;
+        const actualMime = mr.mimeType || mime || 'audio/webm';
+        const blob = new Blob(chunks, { type: actualMime });
+        const ext  = audioExtFromMime(actualMime);
+        const file = new File([blob], `voice-note-${Date.now()}.${ext}`, { type: actualMime });
+        onSendFiles([file]);
+        audioChunksRef.current = [];
+      };
+
+      mr.start(250); // collect chunks every 250ms
+      setIsRecording(true);
+      setRecordingSecs(0);
+      timerRef.current = setInterval(() => setRecordingSecs(s => s + 1), 1000);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Microphone access denied';
+      setMicError(msg);
+    }
+  }, [onSendFiles]);
+
+  // Clean up on unmount
+  useEffect(() => () => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    streamRef.current?.getTracks().forEach(t => t.stop());
+  }, []);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -229,10 +316,18 @@ export function SendPanel({ peer, messages, onSendFiles, onSendText, outgoing, i
             {outgoing.map(t => (
               <div key={t.id}>
                 <TransferProgress transfer={t} />
-                {t.previewUrl && (
+                {t.previewUrl && t.mimeType?.startsWith('image/') && (
                   <img src={t.previewUrl} alt={t.name}
                     className="mt-1 max-h-48 rounded-xl object-contain border border-stone-200 dark:border-stone-700 w-full"
                     onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
+                )}
+                {t.previewUrl && t.mimeType?.startsWith('audio/') && (
+                  <audio src={t.previewUrl} controls aria-label={t.name}
+                    className="mt-1 w-full rounded-xl" />
+                )}
+                {t.previewUrl && t.mimeType?.startsWith('video/') && (
+                  <video src={t.previewUrl} controls playsInline aria-label={t.name}
+                    className="mt-1 w-full max-h-48 rounded-xl border border-stone-200 dark:border-stone-700" />
                 )}
               </div>
             ))}
@@ -333,20 +428,57 @@ export function SendPanel({ peer, messages, onSendFiles, onSendText, outgoing, i
       </div>
 
       {/* Text input */}
-      <div className="flex gap-2 bg-white dark:bg-stone-900 rounded-xl border border-stone-200 dark:border-stone-700 p-2">
-        <input
-          ref={inputRef}
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleSubmitText())}
-          placeholder="Send a message or text snippet..."
-          className="flex-1 text-sm bg-transparent outline-none text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-600 px-2"
-        />
-        <Button size="sm" onClick={handleSubmitText} disabled={!text.trim()}
-          className="bg-stone-900 dark:bg-stone-100 dark:text-stone-900 text-white hover:bg-stone-700 dark:hover:bg-stone-300 rounded-lg text-xs px-3 flex items-center gap-1.5">
-          Send <IconSend className="w-3.5 h-3.5" />
-        </Button>
+      <div className={[
+        'flex gap-2 rounded-xl border p-2 transition-colors',
+        isRecording
+          ? 'bg-red-50 dark:bg-red-950 border-red-300 dark:border-red-800'
+          : 'bg-white dark:bg-stone-900 border-stone-200 dark:border-stone-700',
+      ].join(' ')}>
+        {isRecording ? (
+          <div className="flex-1 flex items-center gap-2 px-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse shrink-0" />
+            <span className="text-sm font-mono text-red-600 dark:text-red-400">
+              {fmtDuration(recordingSecs)}
+            </span>
+            <span className="text-sm text-red-500 dark:text-red-400">Recording…</span>
+          </div>
+        ) : (
+          <input
+            ref={inputRef}
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleSubmitText())}
+            placeholder="Send a message or text snippet..."
+            className="flex-1 text-sm bg-transparent outline-none text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-600 px-2"
+          />
+        )}
+        {/* Mic / Stop button */}
+        <button
+          onClick={isRecording ? stopRecording : startRecording}
+          title={isRecording ? 'Stop recording' : 'Record voice note'}
+          aria-label={isRecording ? 'Stop recording' : 'Record voice note'}
+          className={[
+            'p-1.5 rounded-lg border transition-colors flex items-center justify-center',
+            isRecording
+              ? 'bg-red-500 border-red-500 text-white hover:bg-red-600'
+              : 'bg-stone-100 dark:bg-stone-800 border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-400 hover:bg-stone-200 dark:hover:bg-stone-700',
+          ].join(' ')}
+        >
+          {isRecording
+            ? <IconStop className="w-4 h-4" />
+            : <IconMicrophone className="w-4 h-4" />
+          }
+        </button>
+        {!isRecording && (
+          <Button size="sm" onClick={handleSubmitText} disabled={!text.trim()}
+            className="bg-stone-900 dark:bg-stone-100 dark:text-stone-900 text-white hover:bg-stone-700 dark:hover:bg-stone-300 rounded-lg text-xs px-3 flex items-center gap-1.5">
+            Send <IconSend className="w-3.5 h-3.5" />
+          </Button>
+        )}
       </div>
+      {micError && (
+        <p className="text-[10px] text-red-500 dark:text-red-400 px-1 -mt-1">{micError}</p>
+      )}
     </div>
   );
 }
