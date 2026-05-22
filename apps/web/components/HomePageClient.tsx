@@ -18,6 +18,7 @@ import { NameEntry } from '@/components/NameEntry';
 import type { IncomingTransfer } from '@/hooks/useTransfer';
 import type { Message } from '@/components/SendPanel';
 import { loadHistory, saveHistory, type HistoryEntry } from '@/lib/history';
+import { loadPersistedMessages, savePersistedMessages, clearPersistedMessages } from '@/lib/messages';
 import { useDarkMode } from '@/hooks/useDarkMode';
 import { hashPassword } from '@/lib/hashPassword';
 import { playSend, playReceive } from '@/lib/sounds';
@@ -48,7 +49,7 @@ export default function HomePage() {
   const [joinOpen, setJoinOpen] = useState(false);
   const [passwordSet, setPasswordSet] = useState(false);
   const [pendingTransfer, setPendingTransfer] = useState<IncomingTransfer | null>(null);
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<Message[]>(() => loadPersistedMessages());
   const [unread, setUnread] = useState<Set<string>>(new Set());
   const [history, setHistory] = useState<HistoryEntry[]>(loadHistory);
   const [myRoomCode, setMyRoomCode] = useState<string | null>(() => {
@@ -92,7 +93,7 @@ export default function HomePage() {
             const senderName = peersRef.current.find(p => p.id === peerId)?.displayName ?? 'Someone';
             notifyReceived('NearDrop', `${senderName}: ${content.slice(0, 60)}`);
             setMessages(m => [...m, {
-              id: nanoid(), peerId, content, direction: 'received', timestamp: Date.now(),
+              id: nanoid(), peerId, peerName: senderName, content, direction: 'received', timestamp: Date.now(),
             }]);
             setUnread(u => new Set(u).add(peerId));
           },
@@ -116,6 +117,9 @@ export default function HomePage() {
   });
 
   useEffect(() => { closeAllRef.current = closeAll; }, [closeAll]);
+
+  // Persist messages to localStorage whenever they change
+  useEffect(() => { savePersistedMessages(messages); }, [messages]);
 
   useEffect(() => {
     if (!nameReady) return;
@@ -171,9 +175,9 @@ export default function HomePage() {
       files.forEach(f => {
         playSend();
         sendFile(target.id, f, channel).then(() => {
-          addHistory({ peerId: target.id, kind: 'file', name: f.name, direction: 'sent', status: 'done' });
+          addHistory({ peerId: target.id, peerName: target.displayName, kind: 'file', name: f.name, direction: 'sent', status: 'done' });
         }).catch(() => {
-          addHistory({ peerId: target.id, kind: 'file', name: f.name, direction: 'sent', status: 'error' });
+          addHistory({ peerId: target.id, peerName: target.displayName, kind: 'file', name: f.name, direction: 'sent', status: 'error' });
         });
       });
     });
@@ -187,9 +191,9 @@ export default function HomePage() {
       playSend();
       sendText(channel, text);
       setMessages(m => [...m, {
-        id: nanoid(), peerId: target.id, content: text, direction: 'sent', timestamp: Date.now(),
+        id: nanoid(), peerId: target.id, peerName: target.displayName, content: text, direction: 'sent', timestamp: Date.now(),
       }]);
-      addHistory({ peerId: target.id, kind: 'text', name: text.slice(0, 40), direction: 'sent', status: 'done' });
+      addHistory({ peerId: target.id, peerName: target.displayName, kind: 'text', name: text.slice(0, 40), direction: 'sent', status: 'done' });
     });
   }, [broadcastMode, peers, selectedPeer, getChannel, sendText, addHistory]);
 
@@ -308,13 +312,16 @@ export default function HomePage() {
           ) : selectedPeer ? (
             <SendPanel
               peer={selectedPeer}
-              messages={messages.filter(m => m.peerId === selectedPeer.id)}
+              messages={messages.filter(m => m.peerName === selectedPeer.displayName)}
               onSendFiles={handleSendFiles}
               onSendText={handleSendText}
               outgoing={Array.from(outgoing.values()).filter(t => t.peerId === selectedPeer.id)}
               incoming={Array.from(incoming.values()).filter(t => t.peerId === selectedPeer.id)}
-              history={history.filter(h => h.peerId === selectedPeer.id)}
-              onClearHistory={() => setHistory([])}
+              history={history.filter(h => (h.peerName ?? h.peerId) === (selectedPeer.displayName ?? selectedPeer.id))}
+              onClearHistory={() => {
+                setHistory(h => { const next = h.filter(e => (e.peerName ?? e.peerId) !== (selectedPeer.displayName ?? selectedPeer.id)); saveHistory(next); return next; });
+                setMessages(m => { const next = m.filter(msg => msg.peerName !== selectedPeer.displayName); savePersistedMessages(next); return next; });
+              }}
             />
           ) : (
             <div className="flex-1 flex flex-col items-center justify-center text-stone-300 dark:text-stone-700">
@@ -332,9 +339,13 @@ export default function HomePage() {
         onSendText={handleSendText}
         outgoing={Array.from(outgoing.values())}
         incoming={Array.from(incoming.values())}
-        messages={messages}
-        history={history}
-        onClearHistory={() => setHistory([])}
+        messages={selectedPeer ? messages.filter(m => m.peerName === selectedPeer.displayName) : messages}
+        history={selectedPeer ? history.filter(h => (h.peerName ?? h.peerId) === selectedPeer.displayName) : history}
+        onClearHistory={() => {
+          if (!selectedPeer) return;
+          setHistory(h => { const next = h.filter(e => (e.peerName ?? e.peerId) !== selectedPeer.displayName); saveHistory(next); return next; });
+          setMessages(m => { const next = m.filter(msg => msg.peerName !== selectedPeer.displayName); savePersistedMessages(next); return next; });
+        }}
       />
 
       <IncomingAlert
@@ -344,7 +355,8 @@ export default function HomePage() {
           const channel = getChannel(pendingTransfer!.peerId);
           if (channel) acceptTransfer(id, channel);
           if (pendingTransfer) {
-            addHistory({ peerId: pendingTransfer.peerId, kind: 'file', name: pendingTransfer.name, direction: 'received', status: 'done' });
+            const senderName = peers.find(p => p.id === pendingTransfer.peerId)?.displayName ?? 'Someone';
+            addHistory({ peerId: pendingTransfer.peerId, peerName: senderName, kind: 'file', name: pendingTransfer.name, direction: 'received', status: 'done' });
           }
           setPendingTransfer(null);
         }}

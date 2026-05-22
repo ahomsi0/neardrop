@@ -17,6 +17,7 @@ import {
 export interface Message {
   id: string;
   peerId: string;
+  peerName: string;    // display name — stable across sessions
   content: string;
   direction: 'sent' | 'received';
   timestamp: number;

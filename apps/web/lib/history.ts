@@ -1,6 +1,7 @@
 export interface HistoryEntry {
   id: string;
   peerId: string;
+  peerName?: string;   // stable display name — used for cross-session lookup
   kind: 'file' | 'text';
   name: string;
   direction: 'sent' | 'received';
