@@ -156,11 +156,11 @@ export function SendPanel({ peer, messages, onSendFiles, onSendText, outgoing, i
         </button>
         <button
           onClick={() => folderRef.current?.click()}
-          className="p-1.5 bg-stone-100 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-400 rounded-lg hover:bg-stone-200 dark:hover:bg-stone-700 transition-colors"
+          className="flex items-center gap-1.5 text-xs font-bold bg-stone-100 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-400 px-3 py-1.5 rounded-lg hover:bg-stone-200 dark:hover:bg-stone-700 transition-colors"
           title="Send folder (zipped)"
           aria-label="Send folder"
         >
-          <IconFolder className="w-4 h-4" />
+          <IconFolder className="w-3.5 h-3.5" /> Folder
         </button>
         <button
           onClick={() => fileRef.current?.click()}
