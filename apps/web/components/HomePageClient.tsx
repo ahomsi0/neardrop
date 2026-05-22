@@ -100,8 +100,24 @@ export default function HomePage() {
           (t) => {
             playReceive();
             const senderName = peersRef.current.find(p => p.id === t.peerId)?.displayName ?? 'Someone';
-            notifyReceived('NearDrop', `${senderName} wants to send ${t.name} (${formatBytes(t.size)})`);
-            setPendingTransfer(t);
+            if (t.mimeType.startsWith('audio/')) {
+              // Voice notes auto-accept — no confirmation needed, just like text messages
+              acceptTransfer(t.id, channel);
+              notifyReceived('NearDrop', `${senderName} sent a voice note`);
+              setHistory(h => {
+                const entry: HistoryEntry = {
+                  id: nanoid(), timestamp: Date.now(),
+                  peerId: t.peerId, peerName: senderName,
+                  kind: 'file', name: t.name, direction: 'received', status: 'done',
+                };
+                const next = [...h, entry];
+                saveHistory(next);
+                return next;
+              });
+            } else {
+              notifyReceived('NearDrop', `${senderName} wants to send ${t.name} (${formatBytes(t.size)})`);
+              setPendingTransfer(t);
+            }
           },
         );
     },
