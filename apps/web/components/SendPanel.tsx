@@ -37,6 +37,35 @@ function fmt(ts: number) {
   return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
+const URL_RE = /https?:\/\/[^\s<>"]+/g;
+
+function MessageText({ content, sent }: { content: string; sent: boolean }) {
+  const parts: React.ReactNode[] = [];
+  let last = 0;
+  for (const match of content.matchAll(URL_RE)) {
+    const idx = match.index!;
+    if (idx > last) parts.push(content.slice(last, idx));
+    parts.push(
+      <a
+        key={idx}
+        href={match[0]}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={sent
+          ? 'underline underline-offset-2 decoration-stone-400 hover:decoration-white'
+          : 'underline underline-offset-2 decoration-stone-400 hover:decoration-stone-700 dark:hover:decoration-stone-300'
+        }
+        onClick={(e) => e.stopPropagation()}
+      >
+        {match[0]}
+      </a>
+    );
+    last = idx + match[0].length;
+  }
+  if (last < content.length) parts.push(content.slice(last));
+  return <p className="break-all">{parts}</p>;
+}
+
 export function SendPanel({ peer, messages, onSendFiles, onSendText, outgoing, incoming, history, onClearHistory }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const fileRef  = useRef<HTMLInputElement>(null);
@@ -290,7 +319,7 @@ export function SendPanel({ peer, messages, onSendFiles, onSendText, outgoing, i
                     ? 'bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 rounded-br-sm'
                     : 'bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-stone-900 dark:text-stone-100 rounded-bl-sm',
                 ].join(' ')}>
-                  <p>{m.content}</p>
+                  <MessageText content={m.content} sent={m.direction === 'sent'} />
                   <p className="text-[9px] mt-1 text-stone-400 dark:text-stone-500">
                     {fmt(m.timestamp)}
                   </p>
