@@ -51,26 +51,47 @@ function hashHue(id: string): number {
   return h % 360;
 }
 
-export function PeerAvatar({ peer, size = 'md' }: { peer: { id: string; emoji: string; displayName: string }; size?: 'sm' | 'md' }) {
-  const dim = size === 'sm' ? 'w-7 h-7 text-sm' : 'w-8 h-8 text-base';
-  if (peer.emoji) {
-    return (
-      <div className={`${dim} bg-white rounded-full flex items-center justify-center border border-stone-200 shrink-0 dark:bg-stone-800 dark:border-stone-700`}>
-        {peer.emoji}
-      </div>
-    );
-  }
+export function peerGradient(id: string): string {
+  const h1 = hashHue(id);
+  const h2 = (h1 + 110) % 360;
+  return `linear-gradient(135deg, hsl(${h1},65%,58%), hsl(${h2},65%,44%))`;
+}
+
+export function PeerAvatar({ peer, size = 'md' }: { peer: { id: string; emoji?: string; displayName: string }; size?: 'sm' | 'md' }) {
   const initials = peer.displayName
     .split(' ')
+    .filter(Boolean)
     .map(w => w[0])
     .join('')
     .slice(0, 2)
-    .toUpperCase();
-  const hue = hashHue(peer.id);
+    .toUpperCase() || '?';
+
+  const dim  = size === 'sm' ? 'w-7 h-7'   : 'w-8 h-8';
+  const font = size === 'sm' ? 'text-[9px]' : 'text-[10px]';
+
   return (
     <div
-      className={`${dim} rounded-full flex items-center justify-center border shrink-0 font-bold text-white text-[10px]`}
-      style={{ backgroundColor: `hsl(${hue},60%,50%)`, borderColor: `hsl(${hue},60%,40%)` }}
+      className={`${dim} ${font} rounded-full flex items-center justify-center shrink-0 font-bold text-white select-none`}
+      style={{ background: peerGradient(peer.id) }}
+    >
+      {initials}
+    </div>
+  );
+}
+
+/** Larger variant used on onboarding — same gradient, configurable size */
+export function PeerAvatarLg({ id, displayName, size = 40 }: { id: string; displayName: string; size?: number }) {
+  const initials = displayName
+    .split(' ')
+    .filter(Boolean)
+    .map(w => w[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase() || '?';
+  return (
+    <div
+      className="rounded-full flex items-center justify-center font-bold text-white select-none shrink-0"
+      style={{ width: size, height: size, fontSize: size * 0.32, background: peerGradient(id) }}
     >
       {initials}
     </div>

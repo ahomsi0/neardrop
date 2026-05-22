@@ -1,22 +1,25 @@
 'use client';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { ANIMALS, getOrCreateIdentity } from '@/lib/deviceName';
+import { getOrCreateIdentity } from '@/lib/deviceName';
+import { PeerAvatarLg } from './DesktopSidebar';
 
 interface Props {
   onComplete: (name: string, emoji: string) => void;
 }
 
 export function NameEntry({ onComplete }: Props) {
-  const defaultEmoji = getOrCreateIdentity().emoji;
+  const identity = getOrCreateIdentity();
   const [name, setName] = useState('');
-  const [selectedEmoji, setSelectedEmoji] = useState(defaultEmoji);
 
   const submit = () => {
     const n = name.trim();
     if (!n) return;
-    onComplete(n, selectedEmoji);
+    onComplete(n, ''); // emoji field no longer used
   };
+
+  // Show badge preview based on live name (fall back to identity id for gradient)
+  const previewName = name.trim() || 'You';
 
   return (
     <div className="flex h-dvh items-center justify-center bg-stone-50 dark:bg-stone-950 px-4">
@@ -28,29 +31,13 @@ export function NameEntry({ onComplete }: Props) {
         </div>
 
         <div className="bg-white dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-800 p-6 shadow-sm space-y-5">
-          {/* Emoji picker */}
-          <div>
-            <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 uppercase tracking-wider mb-3">
-              Pick your icon
-            </label>
-            <div className="grid grid-cols-6 gap-2">
-              {ANIMALS.map(({ emoji, name: label }) => (
-                <button
-                  key={emoji}
-                  type="button"
-                  title={label}
-                  onClick={() => setSelectedEmoji(emoji)}
-                  className={[
-                    'aspect-square rounded-xl text-2xl flex items-center justify-center transition-all',
-                    selectedEmoji === emoji
-                      ? 'bg-stone-900 dark:bg-stone-100 scale-105 shadow-sm'
-                      : 'bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 dark:hover:bg-stone-700',
-                  ].join(' ')}
-                >
-                  {emoji}
-                </button>
-              ))}
-            </div>
+
+          {/* Badge preview */}
+          <div className="flex flex-col items-center gap-3 py-2">
+            <PeerAvatarLg id={identity.id} displayName={previewName} size={64} />
+            <p className="text-[11px] text-stone-400 dark:text-stone-500 font-medium">
+              Your badge is unique to this device
+            </p>
           </div>
 
           {/* Name input */}
@@ -69,19 +56,14 @@ export function NameEntry({ onComplete }: Props) {
             />
           </div>
 
-          {/* Preview + submit */}
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-stone-100 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 flex items-center justify-center text-xl shrink-0">
-              {selectedEmoji}
-            </div>
-            <Button
-              onClick={submit}
-              disabled={!name.trim()}
-              className="flex-1 bg-stone-900 dark:bg-stone-100 dark:text-stone-900 text-white hover:bg-stone-700 rounded-xl h-10 text-sm font-bold"
-            >
-              Start →
-            </Button>
-          </div>
+          {/* Submit */}
+          <Button
+            onClick={submit}
+            disabled={!name.trim()}
+            className="w-full bg-stone-900 dark:bg-stone-100 dark:text-stone-900 text-white hover:bg-stone-700 rounded-xl h-10 text-sm font-bold"
+          >
+            Start →
+          </Button>
         </div>
       </div>
     </div>

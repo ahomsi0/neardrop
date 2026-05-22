@@ -16,7 +16,7 @@ export const ANIMALS: { name: string; emoji: string }[] = [
 export function generateDeviceName(): { displayName: string; emoji: string } {
   const adj    = ADJECTIVES[Math.floor(Math.random() * ADJECTIVES.length)];
   const animal = ANIMALS[Math.floor(Math.random() * ANIMALS.length)];
-  return { displayName: `${adj} ${animal.name}`, emoji: animal.emoji };
+  return { displayName: `${adj} ${animal.name}`, emoji: '' };
 }
 
 export function detectDeviceType(): 'mobile' | 'desktop' {
