@@ -4,6 +4,7 @@ import QRCode from 'qrcode';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { IconLock, IconLink, IconCheck, IconSend } from '@/components/icons';
 
 interface Props {
   roomCode: string | null;
@@ -63,9 +64,9 @@ export function QRCodePanel({ roomCode, open, onClose, onCreateWithPassword, pas
             />
             <Button
               onClick={handleCreate}
-              className="w-full bg-stone-900 dark:bg-stone-100 dark:text-stone-900 text-white rounded-xl h-10"
+              className="w-full bg-stone-900 dark:bg-stone-100 dark:text-stone-900 text-white rounded-xl h-10 flex items-center justify-center gap-2"
             >
-              Create Room →
+              Create Room <IconSend className="w-4 h-4" />
             </Button>
           </div>
         )}
@@ -78,7 +79,9 @@ export function QRCodePanel({ roomCode, open, onClose, onCreateWithPassword, pas
               <p className="font-mono text-2xl font-bold text-stone-900 dark:text-stone-100 tracking-widest">{roomCode}</p>
             </div>
             {passwordSet && (
-              <p className="text-xs text-amber-600 font-medium">🔒 Password protected</p>
+              <p className="text-xs text-amber-600 font-medium flex items-center gap-1.5">
+                <IconLock className="w-3.5 h-3.5" /> Password protected
+              </p>
             )}
             <button
               disabled={!roomCode}
@@ -91,7 +94,10 @@ export function QRCodePanel({ roomCode, open, onClose, onCreateWithPassword, pas
               }}
               className="w-full flex items-center justify-center gap-2 text-xs font-bold bg-stone-100 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-stone-700 dark:text-stone-300 px-3 py-2 rounded-xl hover:bg-stone-200 dark:hover:bg-stone-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              {copied ? '✓ Copied!' : '🔗 Copy link'}
+              {copied
+                ? <><IconCheck className="w-3.5 h-3.5" /> Copied!</>
+                : <><IconLink  className="w-3.5 h-3.5" /> Copy link</>
+              }
             </button>
             <p className="text-xs text-stone-400">Expires after 10 minutes of inactivity</p>
           </div>

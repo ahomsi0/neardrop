@@ -23,6 +23,7 @@ import { hashPassword } from '@/lib/hashPassword';
 import { playSend, playReceive } from '@/lib/sounds';
 import { requestNotificationPermission, notifyReceived } from '@/lib/notify';
 import { formatBytes } from '@/lib/fileIcons';
+import { IconSend, IconArrowLeft, IconFile } from '@/components/icons';
 
 const NAME_SET_KEY = 'neardrop-name-set';
 const MY_ROOM_KEY = 'neardrop-my-room';
@@ -288,7 +289,7 @@ export default function HomePage() {
           {broadcastMode ? (
             <div className="flex-1 flex flex-col h-full w-full">
               <div className="flex items-center gap-3 pb-3 border-b border-stone-100 dark:border-stone-800">
-                <div className="w-9 h-9 bg-stone-900 dark:bg-stone-100 rounded-full flex items-center justify-center text-white dark:text-stone-900 font-bold text-base shrink-0">↗</div>
+                <div className="w-9 h-9 bg-stone-900 dark:bg-stone-100 rounded-full flex items-center justify-center text-white dark:text-stone-900 shrink-0"><IconSend className="w-4 h-4" /></div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-bold text-stone-900 dark:text-stone-100">Everyone</p>
                   <p className="text-[10px] text-stone-400">{peers.length} device{peers.length !== 1 ? 's' : ''}</p>
@@ -296,8 +297,8 @@ export default function HomePage() {
                 <input ref={broadcastFileRef} type="file" multiple className="hidden"
                   onChange={(e) => { const f = Array.from(e.target.files ?? []); if (f.length) handleSendFiles(f); }} />
                 <button onClick={() => broadcastFileRef.current?.click()}
-                  className="text-xs font-bold bg-stone-900 dark:bg-stone-100 dark:text-stone-900 text-white px-3 py-1.5 rounded-lg hover:bg-stone-700 dark:hover:bg-stone-300 transition-colors">
-                  + File
+                  className="flex items-center gap-1.5 text-xs font-bold bg-stone-900 dark:bg-stone-100 dark:text-stone-900 text-white px-3 py-1.5 rounded-lg hover:bg-stone-700 dark:hover:bg-stone-300 transition-colors">
+                  <IconFile className="w-3.5 h-3.5" /> File
                 </button>
               </div>
               <div className="flex-1 flex items-center justify-center text-stone-400 dark:text-stone-600">
@@ -317,7 +318,7 @@ export default function HomePage() {
             />
           ) : (
             <div className="flex-1 flex flex-col items-center justify-center text-stone-300 dark:text-stone-700">
-              <span className="text-5xl mb-3">←</span>
+              <IconArrowLeft className="w-10 h-10 mb-3" />
               <p className="text-sm font-medium">Select a device to send files</p>
             </div>
           )}

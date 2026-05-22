@@ -8,6 +8,11 @@ import { TransferProgress } from './TransferProgress';
 import { PeerAvatar } from './DesktopSidebar';
 import type { HistoryEntry } from '@/lib/history';
 import { clearHistory } from '@/lib/history';
+import {
+  IconSend, IconClipboard, IconFolder, IconFolderOpen,
+  IconChevronUp, IconChevronDown, IconX,
+  IconArrowUp, IconArrowDown, IconMessageCircle, IconFile,
+} from '@/components/icons';
 
 export interface Message {
   id: string;
@@ -143,25 +148,25 @@ export function SendPanel({ peer, messages, onSendFiles, onSendText, outgoing, i
               }
             } catch { /* permission denied or empty */ }
           }}
-          className="text-xs font-bold bg-stone-100 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-stone-700 dark:text-stone-300 px-3 py-1.5 rounded-lg hover:bg-stone-200 dark:hover:bg-stone-700 transition-colors"
+          className="p-1.5 bg-stone-100 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-400 rounded-lg hover:bg-stone-200 dark:hover:bg-stone-700 transition-colors"
           title="Share clipboard"
           aria-label="Share clipboard"
         >
-          📋
+          <IconClipboard className="w-4 h-4" />
         </button>
         <button
           onClick={() => folderRef.current?.click()}
-          className="text-xs font-bold bg-stone-100 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-stone-700 dark:text-stone-300 px-3 py-1.5 rounded-lg hover:bg-stone-200 dark:hover:bg-stone-700 transition-colors"
+          className="p-1.5 bg-stone-100 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-400 rounded-lg hover:bg-stone-200 dark:hover:bg-stone-700 transition-colors"
           title="Send folder (zipped)"
           aria-label="Send folder"
         >
-          📁
+          <IconFolder className="w-4 h-4" />
         </button>
         <button
           onClick={() => fileRef.current?.click()}
-          className="text-xs font-bold bg-stone-900 dark:bg-stone-100 dark:text-stone-900 text-white px-3 py-1.5 rounded-lg hover:bg-stone-700 dark:hover:bg-stone-300 transition-colors"
+          className="flex items-center gap-1.5 text-xs font-bold bg-stone-900 dark:bg-stone-100 dark:text-stone-900 text-white px-3 py-1.5 rounded-lg hover:bg-stone-700 dark:hover:bg-stone-300 transition-colors"
         >
-          + File
+          <IconFile className="w-3.5 h-3.5" /> File
         </button>
       </div>
 
@@ -183,7 +188,7 @@ export function SendPanel({ peer, messages, onSendFiles, onSendText, outgoing, i
             ].join(' ')}
             onClick={() => fileRef.current?.click()}
           >
-            <span className="text-3xl mb-2">📂</span>
+            <IconFolderOpen className="w-10 h-10 text-stone-300 dark:text-stone-600 mb-2" />
             <p className="text-sm font-bold text-stone-900 dark:text-stone-100">Drop files here</p>
             <p className="text-xs text-stone-400 mt-1">or tap to browse · any size</p>
           </div>
@@ -233,26 +238,39 @@ export function SendPanel({ peer, messages, onSendFiles, onSendText, outgoing, i
                     className="flex-1 flex items-center justify-between px-3 py-2 text-[11px] font-bold text-stone-500 dark:text-stone-400 bg-stone-50 dark:bg-stone-800 hover:bg-stone-100 dark:hover:bg-stone-700"
                   >
                     <span>History ({history.length})</span>
-                    <span>{historyOpen ? '▲' : '▼'}</span>
+                    {historyOpen
+                      ? <IconChevronUp className="w-3 h-3" />
+                      : <IconChevronDown className="w-3 h-3" />
+                    }
                   </button>
                   <button
                     onClick={() => { clearHistory(); onClearHistory(); }}
-                    className="px-2 py-2 text-[10px] text-stone-400 hover:text-red-500 transition-colors bg-stone-50 dark:bg-stone-800 border-l border-stone-200 dark:border-stone-700"
+                    className="px-2 py-2 text-stone-400 hover:text-red-500 transition-colors bg-stone-50 dark:bg-stone-800 border-l border-stone-200 dark:border-stone-700"
                     title="Clear history"
                     aria-label="Clear history"
                   >
-                    ✕
+                    <IconX className="w-3.5 h-3.5" />
                   </button>
                 </div>
                 {historyOpen && (
                   <div className="divide-y divide-stone-100 dark:divide-stone-800 max-h-48 overflow-y-auto bg-white dark:bg-stone-900">
                     {[...history].reverse().map(h => (
                       <div key={h.id} className="flex items-center gap-2 px-3 py-2">
-                        <span className="text-base">{h.kind === 'file' ? '📁' : '💬'}</span>
+                        <span className="text-stone-400 dark:text-stone-500 shrink-0">
+                          {h.kind === 'file'
+                            ? <IconFile className="w-4 h-4" />
+                            : <IconMessageCircle className="w-4 h-4" />
+                          }
+                        </span>
                         <div className="min-w-0 flex-1">
                           <p className="text-xs font-medium text-stone-900 dark:text-stone-100 truncate">{h.name}</p>
-                          <p className="text-[10px] text-stone-400">
-                            {h.direction === 'sent' ? '↑ sent' : '↓ received'} · {new Date(h.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          <p className="text-[10px] text-stone-400 flex items-center gap-1">
+                            {h.direction === 'sent'
+                              ? <><IconArrowUp className="w-2.5 h-2.5" /> sent</>
+                              : <><IconArrowDown className="w-2.5 h-2.5" /> received</>
+                            }
+                            {' · '}
+                            {new Date(h.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           </p>
                         </div>
                         {h.status === 'error' && <span className="text-red-500 text-[10px]">failed</span>}
@@ -295,8 +313,8 @@ export function SendPanel({ peer, messages, onSendFiles, onSendText, outgoing, i
           className="flex-1 text-sm bg-transparent outline-none text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-600 px-2"
         />
         <Button size="sm" onClick={handleSubmitText} disabled={!text.trim()}
-          className="bg-stone-900 dark:bg-stone-100 dark:text-stone-900 text-white hover:bg-stone-700 dark:hover:bg-stone-300 rounded-lg text-xs px-3">
-          Send ↗
+          className="bg-stone-900 dark:bg-stone-100 dark:text-stone-900 text-white hover:bg-stone-700 dark:hover:bg-stone-300 rounded-lg text-xs px-3 flex items-center gap-1.5">
+          Send <IconSend className="w-3.5 h-3.5" />
         </Button>
       </div>
     </div>

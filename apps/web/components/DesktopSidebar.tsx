@@ -1,6 +1,7 @@
 import type { Peer } from '@neardrop/shared';
 import { Button } from '@/components/ui/button';
 import type { SignalingStatus } from '@/hooks/useSignaling';
+import { IconSend, IconZap, IconHome, IconSave } from '@/components/icons';
 
 interface Props {
   me: Peer;
@@ -152,7 +153,7 @@ export function DesktopSidebar({ me, peers, selectedPeerId, unreadPeerIds, signa
                 onClick={onJoinMyRoom}
                 className="w-full flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-[10px] font-bold text-stone-500 dark:text-stone-400 hover:bg-stone-200 dark:hover:bg-stone-700 transition-colors"
               >
-                🏠 Rejoin My Room ({myRoomCode})
+                <IconHome className="w-3.5 h-3.5 shrink-0" /> Rejoin My Room ({myRoomCode})
               </button>
             )}
             {currentRoomCode && currentRoomCode !== myRoomCode && (
@@ -160,11 +161,13 @@ export function DesktopSidebar({ me, peers, selectedPeerId, unreadPeerIds, signa
                 onClick={onSaveAsMyRoom}
                 className="w-full flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-[10px] font-bold text-stone-500 dark:text-stone-400 hover:bg-stone-200 dark:hover:bg-stone-700 transition-colors"
               >
-                💾 Save as My Room
+                <IconSave className="w-3.5 h-3.5 shrink-0" /> Save as My Room
               </button>
             )}
             {currentRoomCode && currentRoomCode === myRoomCode && (
-              <p className="text-[10px] text-stone-400 dark:text-stone-500 px-2 py-1">🏠 My Room ({myRoomCode})</p>
+              <p className="text-[10px] text-stone-400 dark:text-stone-500 px-2 py-1 flex items-center gap-1.5">
+                <IconHome className="w-3.5 h-3.5 shrink-0" /> My Room ({myRoomCode})
+              </p>
             )}
           </div>
         )}
@@ -184,8 +187,8 @@ export function DesktopSidebar({ me, peers, selectedPeerId, unreadPeerIds, signa
                   : 'bg-white border border-stone-200 hover:border-stone-300 dark:bg-stone-800 dark:border-stone-700 dark:hover:border-stone-600',
               ].join(' ')}
             >
-              <div className="w-7 h-7 rounded-full bg-stone-900 dark:bg-stone-100 flex items-center justify-center text-xs text-white dark:text-stone-900 font-bold shrink-0">
-                ↗
+              <div className="w-7 h-7 rounded-full bg-stone-900 dark:bg-stone-100 flex items-center justify-center text-white dark:text-stone-900 shrink-0">
+                <IconSend className="w-3.5 h-3.5" />
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-xs font-bold text-stone-900 dark:text-stone-100">Everyone</p>
@@ -220,12 +223,13 @@ export function DesktopSidebar({ me, peers, selectedPeerId, unreadPeerIds, signa
                     </p>
                     {peerQuality.has(p.id) && peerQuality.get(p.id) !== 'unknown' && (
                       <span className={[
-                        'text-[9px] font-mono px-1.5 py-0.5 rounded-full',
+                        'text-[9px] font-mono px-1.5 py-0.5 rounded-full flex items-center gap-0.5 w-fit',
                         peerQuality.get(p.id) === 'direct'
                           ? 'bg-green-100 text-green-700'
                           : 'bg-yellow-100 text-yellow-700',
                       ].join(' ')}>
-                        {peerQuality.get(p.id) === 'relay' ? '⚡ relay' : '⚡ direct'}
+                        <IconZap className="w-2.5 h-2.5" />
+                        {peerQuality.get(p.id) === 'relay' ? 'relay' : 'direct'}
                       </span>
                     )}
                   </div>
